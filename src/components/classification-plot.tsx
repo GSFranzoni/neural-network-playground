@@ -53,8 +53,10 @@ export const ClassificationPlot: React.FC<Props> = ({ network, bounds, dataset }
               cx={toScreenX(point.x)}
               cy={toScreenY(point.y)}
               r="4"
-              fill={point.label === ClassLabel.A ? "#ef5350" : "#4285f4"}
-              stroke="white"
+              fill={
+                point.label === ClassLabel.A ? "var(--classification-a)" : "var(--classification-b)"
+              }
+              stroke="var(--background)"
               strokeWidth="1.5"
             />
           ))}

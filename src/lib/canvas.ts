@@ -6,8 +6,14 @@ type Size = {
   height: number;
 };
 
-const CLASS_A = [239, 83, 80] as const;
-const CLASS_B = [66, 133, 244] as const;
+function colorFromToken(token: string): [number, number, number] {
+  const swatch = document.createElement("canvas");
+  const context = swatch.getContext("2d")!;
+  context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  context.fillRect(0, 0, 1, 1);
+  const [red, green, blue] = context.getImageData(0, 0, 1, 1).data;
+  return [red, green, blue];
+}
 
 function probabilityOfClassOne(output: number[]): number {
   if (output.length === 1) {
@@ -49,6 +55,8 @@ export function drawDecisionSurface(
   const columns = Math.max(2, Math.min(180, Math.round(size.width / 3)));
   const rows = Math.max(2, Math.min(180, Math.round(size.height / 3)));
   const image = context.createImageData(columns, rows);
+  const classA = colorFromToken("--classification-a");
+  const classB = colorFromToken("--classification-b");
 
   for (let row = 0; row < rows; row++) {
     const y = bounds.maxY - ((row + 0.5) / rows) * (bounds.maxY - bounds.minY);
@@ -56,9 +64,9 @@ export function drawDecisionSurface(
       const x = bounds.minX + ((column + 0.5) / columns) * (bounds.maxX - bounds.minX);
       const confidence = probabilityOfClassOne(network.forward([x, y]));
       const index = (row * columns + column) * 4;
-      image.data[index] = Math.round(CLASS_A[0] + (CLASS_B[0] - CLASS_A[0]) * confidence);
-      image.data[index + 1] = Math.round(CLASS_A[1] + (CLASS_B[1] - CLASS_A[1]) * confidence);
-      image.data[index + 2] = Math.round(CLASS_A[2] + (CLASS_B[2] - CLASS_A[2]) * confidence);
+      image.data[index] = Math.round(classA[0] + (classB[0] - classA[0]) * confidence);
+      image.data[index + 1] = Math.round(classA[1] + (classB[1] - classA[1]) * confidence);
+      image.data[index + 2] = Math.round(classA[2] + (classB[2] - classA[2]) * confidence);
       image.data[index + 3] = 105;
     }
   }
