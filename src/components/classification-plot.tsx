@@ -4,15 +4,24 @@ import { useEffect, useRef } from "react";
 import { useResizeObserver } from "@/hooks/use-resize-observer";
 import { classificationColorScale, drawField } from "@/lib/canvas";
 import type { ScalarField } from "@/lib/field";
+import { cn } from "@/lib/utils";
 import { ClassLabel, type Bounds, type Dataset } from "@/types/app";
 
 type Props = {
   bounds: Bounds;
   dataset: Dataset;
   field: ScalarField;
+  className?: string;
+  compact?: boolean;
 };
 
-export const ClassificationPlot: React.FC<Props> = ({ bounds, dataset, field }) => {
+export const ClassificationPlot: React.FC<Props> = ({
+  bounds,
+  className,
+  compact = false,
+  dataset,
+  field,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const { ref: containerRef, size } = useResizeObserver<HTMLDivElement>();
@@ -32,7 +41,11 @@ export const ClassificationPlot: React.FC<Props> = ({ bounds, dataset, field }) 
   return (
     <div
       ref={containerRef}
-      className="bg-background relative aspect-4/3 min-h-64 w-full overflow-hidden rounded-md border"
+      className={cn(
+        "bg-background relative w-full overflow-hidden rounded-md border",
+        compact ? "h-full min-h-0 aspect-auto" : "aspect-4/3 min-h-64",
+        className,
+      )}
     >
       <canvas ref={canvasRef} className="absolute inset-0" aria-label="Network decision surface" />
       <svg

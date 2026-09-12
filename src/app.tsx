@@ -39,26 +39,48 @@ export function App() {
     <main className="mx-auto w-full max-w-3xl p-6">
       <h1 className="mb-4 text-2xl font-semibold">Classification playground</h1>
       <div className="space-y-8">
-        <ClassificationPlot bounds={bounds} dataset={datasets.circle} field={classification} />
         <NetworkGraph>
-          {neuronCount.map((count, layerIndex) => (
+          <NetworkGraphLayer>
+            {Array.from({ length: neuronCount[0] }, (_, neuronIndex) => (
+              <NetworkGraphNeuron
+                key={neuronIndex}
+                id={neuronId(0, neuronIndex)}
+                field={activations[0][neuronIndex]}
+              />
+            ))}
+          </NetworkGraphLayer>
+          {neuronCount.slice(1, -1).map((count, layerIndex) => (
             <NetworkGraphLayer key={layerIndex}>
               {Array.from({ length: count }, (_, neuronIndex) => (
                 <NetworkGraphNeuron
                   key={neuronIndex}
-                  id={neuronId(layerIndex, neuronIndex)}
-                  field={activations[layerIndex][neuronIndex]}
+                  id={neuronId(layerIndex + 1, neuronIndex)}
+                  field={activations[layerIndex + 1][neuronIndex]}
                 />
               ))}
             </NetworkGraphLayer>
           ))}
+          <NetworkGraphLayer>
+            <NetworkGraphNeuron id="output" size={{ width: 192, height: 144 }}>
+              <ClassificationPlot
+                bounds={bounds}
+                compact
+                dataset={datasets.circle}
+                field={classification}
+              />
+            </NetworkGraphNeuron>
+          </NetworkGraphLayer>
           {denseLayers.flatMap((layer, layerIndex) =>
             layer.weights.flatMap((row, destinationIndex) =>
               row.map((weight, sourceIndex) => (
                 <NetworkGraphConnection
                   key={`${layerIndex}-${destinationIndex}-${sourceIndex}`}
                   from={neuronId(layerIndex, sourceIndex)}
-                  to={neuronId(layerIndex + 1, destinationIndex)}
+                  to={
+                    layerIndex === denseLayers.length - 1
+                      ? "output"
+                      : neuronId(layerIndex + 1, destinationIndex)
+                  }
                   weight={weight}
                 />
               )),

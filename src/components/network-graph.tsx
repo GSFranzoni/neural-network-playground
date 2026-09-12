@@ -4,14 +4,14 @@ import { Children, cloneElement, isValidElement, useId } from "react";
 import { useResizeObserver } from "@/hooks/use-resize-observer";
 import type { ScalarField } from "@/lib/field";
 
-type Position = {
-  x: number;
-  y: number;
-};
+type NodeSize = { width: number; height: number };
+type Position = NodeSize & { x: number; y: number };
 
 type NetworkGraphNeuronProps = {
   id: string;
+  children?: ReactNode;
   field?: ScalarField;
+  size?: NodeSize;
   position?: Position;
 };
 
@@ -31,22 +31,21 @@ type NetworkGraphLayerProps = {
   verticalPadding?: number;
 };
 
-type NetworkGraphProps = {
-  children: ReactNode;
-};
+type NetworkGraphProps = { children: ReactNode };
 
-const NEURON_SIZE = 32;
-
+const DEFAULT_NEURON_SIZE = { width: 32, height: 32 };
 const HORIZONTAL_PADDING = 32;
-
 const VERTICAL_PADDING = 24;
 
 function neuronY(index: number, count: number, height: number, padding: number): number {
   if (count === 1) {
     return height / 2;
   }
-
   return padding + (index * (height - padding * 2)) / (count - 1);
+}
+
+function sizeFor(neuron: ReactElement<NetworkGraphNeuronProps>): NodeSize {
+  return neuron.props.size ?? DEFAULT_NEURON_SIZE;
 }
 
 function activationCells(field: ScalarField) {
@@ -54,7 +53,6 @@ function activationCells(field: ScalarField) {
     row.map((value, column) => ({ row: rowIndex, column, value })),
   );
   const maxMagnitude = Math.max(1e-6, ...cells.map((cell) => Math.abs(cell.value)));
-
   return cells.map((cell) => ({
     ...cell,
     opacity: 0.12 + (Math.abs(cell.value) / maxMagnitude) * 0.88,
@@ -68,29 +66,35 @@ function layerNeurons(children: ReactNode): ReactElement<NetworkGraphNeuronProps
   );
 }
 
-export const NetworkGraphNeuron = ({ field, position }: NetworkGraphNeuronProps) => {
+export const NetworkGraphNeuron = ({ children, field, position }: NetworkGraphNeuronProps) => {
   const clipId = useId();
-
   if (!position) {
     return null;
   }
 
-  const left = position.x - NEURON_SIZE / 2;
-
-  const top = position.y - NEURON_SIZE / 2;
-
-  const cellWidth = field?.values[0]?.length ? NEURON_SIZE / field.values[0].length : 0;
-  const cellHeight = field?.values.length ? NEURON_SIZE / field.values.length : 0;
+  const { width, height } = position;
+  const left = position.x - width / 2;
+  const top = position.y - height / 2;
+  const cellWidth = field?.values[0]?.length ? width / field.values[0].length : 0;
+  const cellHeight = field?.values.length ? height / field.values.length : 0;
   const cells = field ? activationCells(field) : [];
+
+  if (children) {
+    return (
+      <foreignObject x={left} y={top} width={width} height={height}>
+        <div className="h-full w-full">{children}</div>
+      </foreignObject>
+    );
+  }
 
   return (
     <g>
       <defs>
         <clipPath id={clipId}>
-          <rect x={left} y={top} width={NEURON_SIZE} height={NEURON_SIZE} rx="5" />
+          <rect x={left} y={top} width={width} height={height} rx="5" />
         </clipPath>
       </defs>
-      <rect x={left} y={top} width={NEURON_SIZE} height={NEURON_SIZE} rx="5" fill="var(--card)" />
+      <rect x={left} y={top} width={width} height={height} rx="5" fill="var(--card)" />
       <g clipPath={`url(#${clipId})`}>
         {cells.map((cell) => (
           <rect
@@ -107,8 +111,8 @@ export const NetworkGraphNeuron = ({ field, position }: NetworkGraphNeuronProps)
       <rect
         x={left}
         y={top}
-        width={NEURON_SIZE}
-        height={NEURON_SIZE}
+        width={width}
+        height={height}
         rx="5"
         fill="none"
         stroke="currentColor"
@@ -131,13 +135,12 @@ export const NetworkGraphConnection = ({
 
   const magnitude = Math.min(Math.abs(weight) / maxWeight, 1);
 
-  const controlX = (fromPosition.x + toPosition.x) / 2;
+  const controlX =
+    (fromPosition.x + fromPosition.width / 2 + toPosition.x - toPosition.width / 2) / 2;
 
   const color = weight >= 0 ? "var(--network-positive)" : "var(--network-negative)";
 
-  const pulseDuration = `${(1.8 - magnitude * 0.9).toFixed(2)}s`;
-
-  const path = `M ${fromPosition.x + NEURON_SIZE / 2} ${fromPosition.y} C ${controlX} ${fromPosition.y}, ${controlX} ${toPosition.y}, ${toPosition.x - NEURON_SIZE / 2} ${toPosition.y}`;
+  const path = `M ${fromPosition.x + fromPosition.width / 2} ${fromPosition.y} C ${controlX} ${fromPosition.y}, ${controlX} ${toPosition.y}, ${toPosition.x - toPosition.width / 2} ${toPosition.y}`;
 
   return (
     <path
@@ -151,7 +154,7 @@ export const NetworkGraphConnection = ({
     >
       <animate
         attributeName="stroke-dashoffset"
-        dur={pulseDuration}
+        dur={`${(1.8 - magnitude * 0.9).toFixed(2)}s`}
         from="0"
         repeatCount="indefinite"
         to="-10"
@@ -167,17 +170,14 @@ export const NetworkGraphLayer = ({
   verticalPadding = 0,
 }: NetworkGraphLayerProps) => {
   const neurons = layerNeurons(children);
-
   return (
     <g>
-      {neurons.map((neuron, index) =>
-        cloneElement(neuron, {
-          position: {
-            x,
-            y: neuronY(index, neurons.length, height, verticalPadding),
-          },
-        }),
-      )}
+      {neurons.map((neuron, index) => {
+        const size = sizeFor(neuron);
+        return cloneElement(neuron, {
+          position: { x, y: neuronY(index, neurons.length, height, verticalPadding), ...size },
+        });
+      })}
     </g>
   );
 };
@@ -196,11 +196,24 @@ export const NetworkGraph = ({ children }: NetworkGraphProps) => {
       child.type === NetworkGraphConnection,
   );
 
-  const layerPositions = layers.map((_, index) => {
-    const availableWidth = Math.max(size.width - HORIZONTAL_PADDING * 2, 0);
-    const step = layers.length > 1 ? availableWidth / (layers.length - 1) : 0;
-    return HORIZONTAL_PADDING + index * step;
-  });
+  const layerWidths = layers.map((layer) =>
+    Math.max(...layerNeurons(layer.props.children).map((neuron) => sizeFor(neuron).width), 0),
+  );
+
+  const availableWidth = Math.max(
+    0,
+    size.width - HORIZONTAL_PADDING * 2 - layerWidths.reduce((total, width) => total + width, 0),
+  );
+
+  const layerGap = layers.length > 1 ? availableWidth / (layers.length - 1) : 0;
+
+  const layerPositions = layerWidths.map(
+    (width, index) =>
+      HORIZONTAL_PADDING +
+      layerWidths.slice(0, index).reduce((total, previousWidth) => total + previousWidth, 0) +
+      layerGap * index +
+      width / 2,
+  );
 
   const maxWeight = Math.max(
     1e-6,
@@ -215,6 +228,7 @@ export const NetworkGraph = ({ children }: NetworkGraphProps) => {
       positions.set(neuron.props.id, {
         x: layerPositions[layerIndex],
         y: neuronY(neuronIndex, neurons.length, size.height, VERTICAL_PADDING),
+        ...sizeFor(neuron),
       });
     });
   });
