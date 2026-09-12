@@ -5,6 +5,7 @@ import {
   NetworkGraphLayer,
   NetworkGraphNeuron,
 } from "@/components/network-graph";
+import { useNetworkVisualization } from "@/hooks/use-network-visualization";
 import { DenseLayer, NeuralNetwork, ReLULayer } from "@/lib/neural-network";
 import { datasets } from "@/mocks/dataset";
 import type { Bounds } from "@/types/app";
@@ -16,32 +17,38 @@ const bounds: Bounds = {
   maxY: 6,
 };
 
-const network = new NeuralNetwork([new DenseLayer(2, 8), new ReLULayer(), new DenseLayer(8, 2)]);
-
 function neuronId(layer: number, neuron: number): string {
   return `layer-${layer}-neuron-${neuron}`;
 }
 
-export function App() {
-  const denseLayers = network.layers.filter(
-    (layer): layer is DenseLayer => layer instanceof DenseLayer,
-  );
+const network = new NeuralNetwork([
+  new DenseLayer(2, 8),
+  new ReLULayer(),
+  new DenseLayer(8, 8),
+  new ReLULayer(),
+  new DenseLayer(8, 1),
+]);
 
-  const neuronCounts =
-    denseLayers.length === 0
-      ? []
-      : [denseLayers[0].inputSize, ...denseLayers.map((layer) => layer.outputSize)];
+export function App() {
+  const { classification, activations, neuronCount, denseLayers } = useNetworkVisualization({
+    network,
+    bounds,
+  });
 
   return (
     <main className="mx-auto w-full max-w-3xl p-6">
       <h1 className="mb-4 text-2xl font-semibold">Classification playground</h1>
       <div className="space-y-8">
-        <ClassificationPlot network={network} bounds={bounds} dataset={datasets.circle} />
+        <ClassificationPlot bounds={bounds} dataset={datasets.circle} field={classification} />
         <NetworkGraph>
-          {neuronCounts.map((count, layerIndex) => (
+          {neuronCount.map((count, layerIndex) => (
             <NetworkGraphLayer key={layerIndex}>
               {Array.from({ length: count }, (_, neuronIndex) => (
-                <NetworkGraphNeuron key={neuronIndex} id={neuronId(layerIndex, neuronIndex)} />
+                <NetworkGraphNeuron
+                  key={neuronIndex}
+                  id={neuronId(layerIndex, neuronIndex)}
+                  field={activations[layerIndex][neuronIndex]}
+                />
               ))}
             </NetworkGraphLayer>
           ))}

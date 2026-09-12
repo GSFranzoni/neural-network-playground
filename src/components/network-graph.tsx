@@ -1,7 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
-import { Children, cloneElement, isValidElement } from "react";
+import { Children, cloneElement, isValidElement, useId } from "react";
 
 import { useResizeObserver } from "@/hooks/use-resize-observer";
+import type { ScalarField } from "@/lib/field";
 
 type Position = {
   x: number;
@@ -10,6 +11,7 @@ type Position = {
 
 type NetworkGraphNeuronProps = {
   id: string;
+  field?: ScalarField;
   position?: Position;
 };
 
@@ -33,11 +35,11 @@ type NetworkGraphProps = {
   children: ReactNode;
 };
 
-const NEURON_RADIUS = 10;
+const NEURON_SIZE = 32;
 
 const HORIZONTAL_PADDING = 32;
 
-const VERTICAL_PADDING = 28;
+const VERTICAL_PADDING = 24;
 
 function neuronY(index: number, count: number, height: number, padding: number): number {
   if (count === 1) {
@@ -47,6 +49,18 @@ function neuronY(index: number, count: number, height: number, padding: number):
   return padding + (index * (height - padding * 2)) / (count - 1);
 }
 
+function activationCells(field: ScalarField) {
+  const cells = field.values.flatMap((row, rowIndex) =>
+    row.map((value, column) => ({ row: rowIndex, column, value })),
+  );
+  const maxMagnitude = Math.max(1e-6, ...cells.map((cell) => Math.abs(cell.value)));
+
+  return cells.map((cell) => ({
+    ...cell,
+    opacity: 0.12 + (Math.abs(cell.value) / maxMagnitude) * 0.88,
+  }));
+}
+
 function layerNeurons(children: ReactNode): ReactElement<NetworkGraphNeuronProps>[] {
   return Children.toArray(children).filter(
     (child): child is ReactElement<NetworkGraphNeuronProps> =>
@@ -54,21 +68,54 @@ function layerNeurons(children: ReactNode): ReactElement<NetworkGraphNeuronProps
   );
 }
 
-export const NetworkGraphNeuron = ({ position }: NetworkGraphNeuronProps) => {
+export const NetworkGraphNeuron = ({ field, position }: NetworkGraphNeuronProps) => {
+  const clipId = useId();
+
   if (!position) {
     return null;
   }
 
+  const left = position.x - NEURON_SIZE / 2;
+
+  const top = position.y - NEURON_SIZE / 2;
+
+  const cellWidth = field?.values[0]?.length ? NEURON_SIZE / field.values[0].length : 0;
+  const cellHeight = field?.values.length ? NEURON_SIZE / field.values.length : 0;
+  const cells = field ? activationCells(field) : [];
+
   return (
-    <circle
-      cx={position.x}
-      cy={position.y}
-      r={NEURON_RADIUS}
-      fill="var(--card)"
-      stroke="currentColor"
-      strokeOpacity="0.65"
-      strokeWidth="1.5"
-    />
+    <g>
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={left} y={top} width={NEURON_SIZE} height={NEURON_SIZE} rx="5" />
+        </clipPath>
+      </defs>
+      <rect x={left} y={top} width={NEURON_SIZE} height={NEURON_SIZE} rx="5" fill="var(--card)" />
+      <g clipPath={`url(#${clipId})`}>
+        {cells.map((cell) => (
+          <rect
+            key={`${cell.row}-${cell.column}`}
+            x={left + cell.column * cellWidth}
+            y={top + cell.row * cellHeight}
+            width={cellWidth + 0.25}
+            height={cellHeight + 0.25}
+            fill={cell.value >= 0 ? "var(--network-positive)" : "var(--network-negative)"}
+            fillOpacity={cell.opacity}
+          />
+        ))}
+      </g>
+      <rect
+        x={left}
+        y={top}
+        width={NEURON_SIZE}
+        height={NEURON_SIZE}
+        rx="5"
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity="0.65"
+        strokeWidth="1.5"
+      />
+    </g>
   );
 };
 
@@ -90,7 +137,7 @@ export const NetworkGraphConnection = ({
 
   const pulseDuration = `${(1.8 - magnitude * 0.9).toFixed(2)}s`;
 
-  const path = `M ${fromPosition.x + NEURON_RADIUS} ${fromPosition.y} C ${controlX} ${fromPosition.y}, ${controlX} ${toPosition.y}, ${toPosition.x - NEURON_RADIUS} ${toPosition.y}`;
+  const path = `M ${fromPosition.x + NEURON_SIZE / 2} ${fromPosition.y} C ${controlX} ${fromPosition.y}, ${controlX} ${toPosition.y}, ${toPosition.x - NEURON_SIZE / 2} ${toPosition.y}`;
 
   return (
     <path
@@ -175,7 +222,7 @@ export const NetworkGraph = ({ children }: NetworkGraphProps) => {
   return (
     <div
       ref={ref}
-      className="bg-background relative aspect-16/7 min-h-64 w-full overflow-hidden rounded-md border"
+      className="bg-background relative aspect-16/7 min-h-80 w-full overflow-hidden rounded-md border"
     >
       <svg
         className="h-full w-full"

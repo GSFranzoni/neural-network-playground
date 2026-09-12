@@ -1,12 +1,15 @@
-import type { NeuralNetwork } from "@/lib/neural-network";
-import type { Bounds } from "@/types/app";
+import type { ScalarField } from "@/lib/field";
 
 type Size = {
   width: number;
   height: number;
 };
 
-function colorFromToken(token: string): [number, number, number] {
+type Rgb = [number, number, number];
+
+export type FieldColorScale = (value: number) => Rgb;
+
+function colorFromToken(token: string): Rgb {
   const swatch = document.createElement("canvas");
   const context = swatch.getContext("2d")!;
   context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
@@ -15,15 +18,15 @@ function colorFromToken(token: string): [number, number, number] {
   return [red, green, blue];
 }
 
-function probabilityOfClassOne(output: number[]): number {
-  if (output.length === 1) {
-    return 1 / (1 + Math.exp(-output[0]));
-  }
+export function classificationColorScale(): FieldColorScale {
+  const classA = colorFromToken("--classification-a");
+  const classB = colorFromToken("--classification-b");
 
-  const largest = Math.max(...output);
-  const probabilities = output.map((value) => Math.exp(value - largest));
-  const total = probabilities.reduce((sum, value) => sum + value, 0);
-  return total === 0 ? 0.5 : probabilities[1] / total;
+  return (value) => [
+    Math.round(classA[0] + (classB[0] - classA[0]) * value),
+    Math.round(classA[1] + (classB[1] - classA[1]) * value),
+    Math.round(classA[2] + (classB[2] - classA[2]) * value),
+  ];
 }
 
 function resizeCanvas(canvas: HTMLCanvasElement, size: Size): CanvasRenderingContext2D | null {
@@ -41,32 +44,28 @@ function resizeCanvas(canvas: HTMLCanvasElement, size: Size): CanvasRenderingCon
   return context;
 }
 
-export function drawDecisionSurface(
+export function drawField(
   canvas: HTMLCanvasElement,
-  network: NeuralNetwork,
-  bounds: Bounds,
+  field: ScalarField,
+  colorScale: FieldColorScale,
   size: Size,
 ): void {
   const context = resizeCanvas(canvas, size);
-  if (!context) {
+  const rows = field.values.length;
+  const columns = field.values[0]?.length ?? 0;
+  if (!context || rows === 0 || columns === 0) {
     return;
   }
 
-  const columns = Math.max(2, Math.min(180, Math.round(size.width / 3)));
-  const rows = Math.max(2, Math.min(180, Math.round(size.height / 3)));
   const image = context.createImageData(columns, rows);
-  const classA = colorFromToken("--classification-a");
-  const classB = colorFromToken("--classification-b");
 
   for (let row = 0; row < rows; row++) {
-    const y = bounds.maxY - ((row + 0.5) / rows) * (bounds.maxY - bounds.minY);
     for (let column = 0; column < columns; column++) {
-      const x = bounds.minX + ((column + 0.5) / columns) * (bounds.maxX - bounds.minX);
-      const confidence = probabilityOfClassOne(network.forward([x, y]));
+      const [red, green, blue] = colorScale(field.values[row][column]);
       const index = (row * columns + column) * 4;
-      image.data[index] = Math.round(classA[0] + (classB[0] - classA[0]) * confidence);
-      image.data[index + 1] = Math.round(classA[1] + (classB[1] - classA[1]) * confidence);
-      image.data[index + 2] = Math.round(classA[2] + (classB[2] - classA[2]) * confidence);
+      image.data[index] = red;
+      image.data[index + 1] = green;
+      image.data[index + 2] = blue;
       image.data[index + 3] = 105;
     }
   }

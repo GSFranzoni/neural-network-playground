@@ -2,33 +2,28 @@ import type React from "react";
 import { useEffect, useRef } from "react";
 
 import { useResizeObserver } from "@/hooks/use-resize-observer";
-import { drawDecisionSurface } from "@/lib/canvas";
-import type { NeuralNetwork } from "@/lib/neural-network";
+import { classificationColorScale, drawField } from "@/lib/canvas";
+import type { ScalarField } from "@/lib/field";
 import { ClassLabel, type Bounds, type Dataset } from "@/types/app";
 
 type Props = {
-  network: NeuralNetwork;
   bounds: Bounds;
   dataset: Dataset;
+  field: ScalarField;
 };
 
-export const ClassificationPlot: React.FC<Props> = ({ network, bounds, dataset }) => {
+export const ClassificationPlot: React.FC<Props> = ({ bounds, dataset, field }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const { ref: containerRef, size } = useResizeObserver<HTMLDivElement>();
-
-  const networkVersion = network
-    .export()
-    .map((parameter) => parameter.join(","))
-    .join("|");
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || size.width === 0 || size.height === 0) {
       return;
     }
-    drawDecisionSurface(canvas, network, bounds, size);
-  }, [network, networkVersion, bounds, size]);
+    drawField(canvas, field, classificationColorScale(), size);
+  }, [field, size]);
 
   const toScreenX = (x: number) => ((x - bounds.minX) / (bounds.maxX - bounds.minX)) * size.width;
 
