@@ -30,13 +30,10 @@ export const NetworkConfigDefaultValues = {
       neurons: 8,
     },
     {
-      neurons: 8,
-    },
-    {
-      neurons: 8,
+      neurons: 2,
     },
   ],
-  learningRate: 0.01,
+  learningRate: 0.03,
 } as NetworkConfigFormSchema;
 
 export const useNetworkConfigForm = () => {
@@ -45,7 +42,20 @@ export const useNetworkConfigForm = () => {
     defaultValues: NetworkConfigDefaultValues,
   });
 
+  const addHiddenLayer = () => {
+    form.setFieldValue("hiddenLayers", (layers) => [
+      ...layers,
+      { neurons: layers.at(-1)?.neurons ?? 8 },
+    ]);
+  };
+
+  const removeHiddenLayer = () => {
+    form.setFieldValue("hiddenLayers", (layers) => layers.slice(0, -1));
+  };
+
   return {
     form,
+    addHiddenLayer,
+    removeHiddenLayer,
   };
 };

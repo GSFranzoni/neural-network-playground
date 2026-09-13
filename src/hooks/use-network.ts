@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useState } from "react";
 
+import { useNetworkConfigChange } from "@/hooks/use-network-config-change";
 import type { NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
 import {
   DenseLayer,
@@ -14,10 +15,6 @@ import {
 } from "@/lib/neural-network";
 import { datasets } from "@/mocks/dataset";
 
-type Props = {
-  config: NetworkConfigFormSchema;
-};
-
 function activationLayer(activation: NetworkConfigFormSchema["activation"]): Layer {
   switch (activation) {
     case "relu":
@@ -31,47 +28,54 @@ function activationLayer(activation: NetworkConfigFormSchema["activation"]): Lay
   }
 }
 
+const createNetwork = (config: NetworkConfigFormSchema) => {
+  const inputLayer = new InputLayer(2);
+
+  const hiddenLayers = config.hiddenLayers.map(
+    ({ neurons }, index) =>
+      new DenseLayer(
+        index === 0 ? inputLayer.size : config.hiddenLayers[index - 1].neurons,
+        neurons,
+      ),
+  );
+
+  const outputLayer = new OutputLayer(hiddenLayers.at(-1)?.outputSize ?? inputLayer.size, 1);
+
+  const neuronCount = [
+    inputLayer.size,
+    ...hiddenLayers.map((layer) => layer.outputSize),
+    outputLayer.outputSize,
+  ];
+
+  const network = new NeuralNetwork([
+    inputLayer,
+    ...hiddenLayers.flatMap((layer) => [layer, activationLayer(config.activation)]),
+    outputLayer,
+  ]);
+
+  const dataset = datasets[config.dataset];
+
+  return { network, inputLayer, hiddenLayers, outputLayer, neuronCount, config, dataset };
+};
+
+type Props = {
+  config: NetworkConfigFormSchema;
+};
+
 export function useNetwork({ config }: Props) {
-  const { network, inputLayer, hiddenLayers, outputLayer, neuronCount } = useMemo(() => {
-    const inputLayer = new InputLayer(2);
+  const [networkState, setNetworkState] = useState(createNetwork(config));
 
-    const hiddenLayers = config.hiddenLayers.map(
-      ({ neurons }, index) =>
-        new DenseLayer(
-          index === 0 ? inputLayer.size : config.hiddenLayers[index - 1].neurons,
-          neurons,
-        ),
-    );
+  const recreateNetwork = () => {
+    setNetworkState(createNetwork(config));
+  };
 
-    const outputLayer = new OutputLayer(hiddenLayers.at(-1)?.outputSize ?? inputLayer.size, 1);
-
-    const neuronCount = [
-      inputLayer.size,
-      ...hiddenLayers.map((layer) => layer.outputSize),
-      outputLayer.outputSize,
-    ];
-
-    const network = new NeuralNetwork([
-      inputLayer,
-      ...hiddenLayers.flatMap((layer) => [layer, activationLayer(config.activation)]),
-      outputLayer,
-    ]);
-
-    return {
-      network,
-      inputLayer,
-      hiddenLayers,
-      outputLayer,
-      neuronCount,
-    };
-  }, [config.activation, config.hiddenLayers]);
+  useNetworkConfigChange({
+    config,
+    onChange: recreateNetwork,
+  });
 
   return {
-    network,
-    inputLayer,
-    hiddenLayers,
-    outputLayer,
-    neuronCount,
-    dataset: datasets[config.dataset],
+    ...networkState,
+    recreateNetwork,
   };
 }

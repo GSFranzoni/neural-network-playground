@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { useAnimationFrameInterval } from "@/hooks/use-animation-frame-interval";
+import { useNetworkConfigChange } from "@/hooks/use-network-config-change";
 import type { NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
 import { binaryCrossEntropy, NeuralNetwork, SGD } from "@/lib/neural-network";
 import { datasets } from "@/mocks/dataset";
@@ -28,7 +29,7 @@ type Props = {
 
 const BATCH_EPOCHS = 1;
 
-const UPDATE_INTERVAL_MS = 120;
+const UPDATE_INTERVAL_MS = 20;
 
 const MAX_HISTORY_POINTS = 60;
 
@@ -99,6 +100,11 @@ export function useTraining({ config, network }: Props) {
     setRunning(false);
     setData(initialTrainingState);
   };
+
+  useNetworkConfigChange({
+    config,
+    onChange: reset,
+  });
 
   return { data, reset, running, start, stop };
 }

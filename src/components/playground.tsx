@@ -56,15 +56,16 @@ function neuronId(layer: number, neuron: number): string {
 }
 
 export const Playground = () => {
-  const { form } = useNetworkConfigForm();
+  const { form, addHiddenLayer, removeHiddenLayer } = useNetworkConfigForm();
 
   const { values } = useSelector(form.store, (state) => state);
 
   const config = useDeferredValue(values);
 
-  const { dataset, hiddenLayers, inputLayer, network, neuronCount, outputLayer } = useNetwork({
-    config,
-  });
+  const { dataset, hiddenLayers, inputLayer, network, neuronCount, outputLayer, recreateNetwork } =
+    useNetwork({
+      config,
+    });
 
   const hiddenLayerCount = config.hiddenLayers.length;
 
@@ -78,17 +79,6 @@ export const Playground = () => {
     network,
     neuronCount,
   });
-
-  const addHiddenLayer = () => {
-    form.setFieldValue("hiddenLayers", (layers) => [
-      ...layers,
-      { neurons: layers.at(-1)?.neurons ?? 8 },
-    ]);
-  };
-
-  const removeHiddenLayer = () => {
-    form.setFieldValue("hiddenLayers", (layers) => layers.slice(0, -1));
-  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -193,10 +183,10 @@ export const Playground = () => {
                       <div className="flex items-center justify-between gap-3">
                         <FieldLabel>Learning rate</FieldLabel>
                         <output className="text-muted-foreground text-xs tabular-nums">
-                          {values.learningRate.toFixed(3)}
+                          {config.learningRate.toFixed(4)}
                         </output>
                       </div>
-                      <FormSlider aria-label="Learning rate" max={0.1} min={0.001} step={0.001} />
+                      <FormSlider aria-label="Learning rate" max={0.1} min={0.0001} step={0.0001} />
                     </Field>
                   )}
                 </form.AppField>
@@ -221,7 +211,10 @@ export const Playground = () => {
               <Button
                 aria-label="Reset training"
                 disabled={training.data.epoch === 0}
-                onClick={training.reset}
+                onClick={() => {
+                  recreateNetwork();
+                  training.reset();
+                }}
                 size="icon-sm"
                 type="button"
                 variant="outline"

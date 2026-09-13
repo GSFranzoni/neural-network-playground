@@ -21,13 +21,14 @@ const chartConfig = {
 
 export function TrainingLossChart({ data }: Props) {
   return (
-    <ChartContainer config={chartConfig} className="h-36 w-full">
+    <ChartContainer config={chartConfig} className="h-32 w-full">
       <AreaChart accessibilityLayer data={data} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
         <ChartTooltip content={<ChartTooltipContent />} />
         <Area
           dataKey="loss"
           fill="var(--color-loss)"
           fillOpacity={0.2}
+          isAnimationActive={false}
           stroke="var(--color-loss)"
           strokeWidth={2}
           type="monotone"
