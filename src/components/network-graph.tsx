@@ -28,7 +28,6 @@ type NetworkGraphLayerProps = {
   children: ReactNode;
   x?: number;
   height?: number;
-  verticalPadding?: number;
 };
 
 type NetworkGraphProps = { children: ReactNode };
@@ -36,12 +35,19 @@ type NetworkGraphProps = { children: ReactNode };
 const DEFAULT_NEURON_SIZE = { width: 32, height: 32 };
 const HORIZONTAL_PADDING = 32;
 const VERTICAL_PADDING = 24;
+const NEURON_SPACING = 44;
 
-function neuronY(index: number, count: number, height: number, padding: number): number {
+function neuronY(index: number, count: number, height: number, neuronHeight: number): number {
   if (count === 1) {
-    return height / 2;
+    return VERTICAL_PADDING + neuronHeight / 2;
   }
-  return padding + (index * (height - padding * 2)) / (count - 1);
+
+  const spacing = Math.min(
+    NEURON_SPACING,
+    Math.max(0, (height - VERTICAL_PADDING * 2 - neuronHeight) / (count - 1)),
+  );
+
+  return VERTICAL_PADDING + neuronHeight / 2 + index * spacing;
 }
 
 function sizeFor(neuron: ReactElement<NetworkGraphNeuronProps>): NodeSize {
@@ -163,19 +169,14 @@ export const NetworkGraphConnection = ({
   );
 };
 
-export const NetworkGraphLayer = ({
-  children,
-  x = 0,
-  height = 0,
-  verticalPadding = 0,
-}: NetworkGraphLayerProps) => {
+export const NetworkGraphLayer = ({ children, x = 0, height = 0 }: NetworkGraphLayerProps) => {
   const neurons = layerNeurons(children);
   return (
     <g>
       {neurons.map((neuron, index) => {
         const size = sizeFor(neuron);
         return cloneElement(neuron, {
-          position: { x, y: neuronY(index, neurons.length, height, verticalPadding), ...size },
+          position: { x, y: neuronY(index, neurons.length, height, size.height), ...size },
         });
       })}
     </g>
@@ -225,10 +226,11 @@ export const NetworkGraph = ({ children }: NetworkGraphProps) => {
   layers.forEach((layer, layerIndex) => {
     const neurons = layerNeurons(layer.props.children);
     neurons.forEach((neuron, neuronIndex) => {
+      const neuronSize = sizeFor(neuron);
       positions.set(neuron.props.id, {
         x: layerPositions[layerIndex],
-        y: neuronY(neuronIndex, neurons.length, size.height, VERTICAL_PADDING),
-        ...sizeFor(neuron),
+        y: neuronY(neuronIndex, neurons.length, size.height, neuronSize.height),
+        ...neuronSize,
       });
     });
   });
@@ -236,7 +238,7 @@ export const NetworkGraph = ({ children }: NetworkGraphProps) => {
   return (
     <div
       ref={ref}
-      className="bg-background relative aspect-16/7 min-h-80 w-full overflow-hidden rounded-md border"
+      className="bg-background relative aspect-16/7 min-h-96 w-full overflow-hidden rounded-md border"
     >
       <svg
         className="h-full w-full"
@@ -258,7 +260,6 @@ export const NetworkGraph = ({ children }: NetworkGraphProps) => {
             cloneElement(layer, {
               x: layerPositions[index],
               height: size.height,
-              verticalPadding: VERTICAL_PADDING,
             }),
           )}
         </g>

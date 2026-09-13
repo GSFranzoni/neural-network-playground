@@ -1,9 +1,19 @@
+import { useMemo, useState } from "react";
+
 import { sampleField } from "@/lib/field";
-import { DenseLayer, type NeuralNetwork } from "@/lib/neural-network";
+import {
+  DenseLayer,
+  InputLayer,
+  NeuralNetwork,
+  OutputLayer,
+  ReLULayer,
+  type Layer,
+} from "@/lib/neural-network";
 import type { Bounds } from "@/types/app";
 
 function activationsFor(network: NeuralNetwork, input: [number, number]): number[][] {
   let values: number[] = input;
+
   const activations = [values];
 
   for (const layer of network.layers) {
@@ -28,28 +38,40 @@ function classConfidence(output: number[]): number {
 }
 
 type Props = {
-  network: NeuralNetwork;
   bounds: Bounds;
 };
 
-export function useNetworkVisualization({ network, bounds }: Props) {
-  const networkVersion = network
-    .export()
-    .map((parameter) => parameter.join(","))
-    .join("|");
+export function useNetworkVisualization({ bounds }: Props) {
+  const [inputLayer] = useState(() => new InputLayer(2));
+
+  const [hiddenLayers, setHiddenLayers] = useState(() => [
+    new DenseLayer(inputLayer.size, 8),
+    new DenseLayer(8, 8),
+  ]);
+
+  const [outputLayer] = useState(() => new OutputLayer(8, 1));
+
+  const layers = useMemo(
+    () =>
+      [
+        inputLayer,
+        ...hiddenLayers.flatMap((layer) => [layer, new ReLULayer()]),
+        outputLayer,
+      ] as Layer[],
+    [hiddenLayers, inputLayer, outputLayer],
+  );
+
+  const network = useMemo(() => new NeuralNetwork(layers), [layers]);
+
+  const neuronCount = [
+    inputLayer.size,
+    ...hiddenLayers.map((layer) => layer.outputSize),
+    outputLayer.outputSize,
+  ];
 
   const classification = sampleField(bounds, 160, (x, y) =>
     classConfidence(network.forward([x, y])),
   );
-
-  const denseLayers = network.layers.filter(
-    (layer): layer is DenseLayer => layer instanceof DenseLayer,
-  );
-
-  const neuronCount =
-    denseLayers.length === 0
-      ? []
-      : [denseLayers[0].inputSize, ...denseLayers.map((layer) => layer.outputSize)];
 
   const activations = neuronCount.map((count, layerIndex) =>
     Array.from({ length: count }, (_, neuronIndex) =>
@@ -58,10 +80,13 @@ export function useNetworkVisualization({ network, bounds }: Props) {
   );
 
   return {
-    networkVersion,
+    network,
     classification,
     activations,
     neuronCount,
-    denseLayers,
+    inputLayer,
+    hiddenLayers,
+    outputLayer,
+    setHiddenLayers,
   };
 }

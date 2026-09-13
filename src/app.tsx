@@ -6,7 +6,6 @@ import {
   NetworkGraphNeuron,
 } from "@/components/network-graph";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
-import { DenseLayer, NeuralNetwork, ReLULayer } from "@/lib/neural-network";
 import { datasets } from "@/mocks/dataset";
 import type { Bounds } from "@/types/app";
 
@@ -21,27 +20,17 @@ function neuronId(layer: number, neuron: number): string {
   return `layer-${layer}-neuron-${neuron}`;
 }
 
-const network = new NeuralNetwork([
-  new DenseLayer(2, 8),
-  new ReLULayer(),
-  new DenseLayer(8, 8),
-  new ReLULayer(),
-  new DenseLayer(8, 1),
-]);
-
 export function App() {
-  const { classification, activations, neuronCount, denseLayers } = useNetworkVisualization({
-    network,
-    bounds,
-  });
+  const { classification, activations, hiddenLayers, inputLayer, outputLayer } =
+    useNetworkVisualization({ bounds });
 
   return (
-    <main className="mx-auto w-full max-w-3xl p-6">
+    <main className="mx-auto w-full max-w-5xl p-6">
       <h1 className="mb-4 text-2xl font-semibold">Classification playground</h1>
       <div className="space-y-8">
         <NetworkGraph>
           <NetworkGraphLayer>
-            {Array.from({ length: neuronCount[0] }, (_, neuronIndex) => (
+            {Array.from({ length: inputLayer.size }, (_, neuronIndex) => (
               <NetworkGraphNeuron
                 key={neuronIndex}
                 id={neuronId(0, neuronIndex)}
@@ -49,9 +38,9 @@ export function App() {
               />
             ))}
           </NetworkGraphLayer>
-          {neuronCount.slice(1, -1).map((count, layerIndex) => (
+          {hiddenLayers.map((layer, layerIndex) => (
             <NetworkGraphLayer key={layerIndex}>
-              {Array.from({ length: count }, (_, neuronIndex) => (
+              {Array.from({ length: layer.outputSize }, (_, neuronIndex) => (
                 <NetworkGraphNeuron
                   key={neuronIndex}
                   id={neuronId(layerIndex + 1, neuronIndex)}
@@ -61,7 +50,7 @@ export function App() {
             </NetworkGraphLayer>
           ))}
           <NetworkGraphLayer>
-            <NetworkGraphNeuron id="output" size={{ width: 192, height: 144 }}>
+            <NetworkGraphNeuron id="output" size={{ width: 350, height: 350 }}>
               <ClassificationPlot
                 bounds={bounds}
                 compact
@@ -70,14 +59,14 @@ export function App() {
               />
             </NetworkGraphNeuron>
           </NetworkGraphLayer>
-          {denseLayers.flatMap((layer, layerIndex) =>
+          {[...hiddenLayers, outputLayer].flatMap((layer, layerIndex) =>
             layer.weights.flatMap((row, destinationIndex) =>
               row.map((weight, sourceIndex) => (
                 <NetworkGraphConnection
                   key={`${layerIndex}-${destinationIndex}-${sourceIndex}`}
                   from={neuronId(layerIndex, sourceIndex)}
                   to={
-                    layerIndex === denseLayers.length - 1
+                    layerIndex === hiddenLayers.length
                       ? "output"
                       : neuronId(layerIndex + 1, destinationIndex)
                   }

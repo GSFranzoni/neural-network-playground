@@ -15,6 +15,26 @@ export interface Parameter {
   readonly gradients: Vector;
 }
 
+export class InputLayer implements Layer {
+  readonly size: number;
+
+  constructor(size: number) {
+    this.size = size;
+  }
+
+  forward(input: Vector): Vector {
+    return input;
+  }
+
+  backward(gradient: Vector): Vector {
+    return gradient;
+  }
+
+  parameters(): Parameter[] {
+    return [];
+  }
+}
+
 export class ReLULayer implements Layer {
   private input: Vector = [];
 
@@ -107,6 +127,8 @@ export class DenseLayer implements Layer {
     ];
   }
 }
+
+export class OutputLayer extends DenseLayer {}
 
 export interface Optimizer {
   step(parameters: readonly Parameter[]): void;
