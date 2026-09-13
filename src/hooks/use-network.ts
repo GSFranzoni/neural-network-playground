@@ -29,7 +29,7 @@ function activationLayer(activation: NetworkConfigFormSchema["activation"]): Lay
 }
 
 const createNetwork = (config: NetworkConfigFormSchema) => {
-  const inputLayer = new InputLayer(2);
+  const inputLayer = new InputLayer(config.features.size);
 
   const hiddenLayers = config.hiddenLayers.map(
     ({ neurons }, index) =>
@@ -55,7 +55,7 @@ const createNetwork = (config: NetworkConfigFormSchema) => {
 
   const dataset = datasets(config.noise)[config.dataset];
 
-  return { network, inputLayer, hiddenLayers, outputLayer, neuronCount, config, dataset };
+  return { network, inputLayer, hiddenLayers, outputLayer, neuronCount, dataset };
 };
 
 type Props = {

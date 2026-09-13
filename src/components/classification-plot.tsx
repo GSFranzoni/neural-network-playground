@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { useResizeObserver } from "@/hooks/use-resize-observer";
 import { classificationColorScale, drawField } from "@/lib/canvas";
+import { encodeCoordinates, type Feature } from "@/lib/features";
 import { sampleField } from "@/lib/field";
 import { NeuralNetwork } from "@/lib/neural-network";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,7 @@ import { ClassLabel, type Bounds, type Dataset } from "@/types/app";
 type Props = {
   bounds: Bounds;
   dataset: Dataset;
+  features: Set<Feature>;
   network: NeuralNetwork;
   revision: number;
   className?: string;
@@ -22,6 +24,7 @@ export const ClassificationPlot: React.FC<Props> = ({
   className,
   compact = false,
   dataset,
+  features,
   network,
   revision,
 }) => {
@@ -39,7 +42,7 @@ export const ClassificationPlot: React.FC<Props> = ({
     }
 
     const field = sampleField(bounds, 160, (x, y) => {
-      const output = network.forward([x, y]);
+      const output = network.forward(encodeCoordinates(x, y, features));
 
       if (output.length === 1) {
         return 1 / (1 + Math.exp(-output[0]));
@@ -52,7 +55,7 @@ export const ClassificationPlot: React.FC<Props> = ({
     });
 
     drawField(canvas, field, colorScale, size);
-  }, [bounds, colorScale, network, revision, size]);
+  }, [bounds, colorScale, features, network, revision, size]);
 
   const toScreenX = (x: number) => ((x - bounds.minX) / (bounds.maxX - bounds.minX)) * size.width;
 

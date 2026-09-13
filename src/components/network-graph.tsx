@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from "react";
+import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 import {
   Children,
   cloneElement,
@@ -14,15 +14,21 @@ import {
 import { useResizeObserver } from "@/hooks/use-resize-observer";
 import { activationFieldDataUrl } from "@/lib/canvas";
 import type { ScalarField } from "@/lib/field";
+import { cn } from "@/lib/utils";
 
 type NodeSize = { width: number; height: number };
 
 type Position = NodeSize & { x: number; y: number };
 
-type NetworkGraphNeuronProps = {
+export type NetworkGraphNeuronProps = {
   id: string;
   children?: ReactNode;
   field?: ScalarField;
+  isSelectable?: boolean;
+  isSelected?: boolean;
+  leftSlot?: ReactNode;
+  leftSlotWidth?: number;
+  onSelect?: () => void;
   size?: NodeSize;
   position?: Position;
 };
@@ -40,6 +46,7 @@ type NetworkGraphConnectionProps = {
 
 type NetworkGraphLayerProps = {
   children: ReactNode;
+  width?: number;
   x?: number;
   topOffset?: number;
 };
@@ -58,8 +65,13 @@ const DEFAULT_NEURON_SIZE = { width: 32, height: 32 };
 const HORIZONTAL_PADDING = 32;
 const VERTICAL_PADDING = 24;
 const NEURON_SPACING = 52;
+const DEFAULT_LEFT_SLOT_WIDTH = 72;
 
-function neuronY(index: number, neuronHeight: number, topOffset: number): number {
+function neuronY(
+  index: number,
+  neuronHeight: number,
+  topOffset: number,
+): number {
   return topOffset + neuronHeight / 2 + index * NEURON_SPACING;
 }
 
@@ -67,23 +79,49 @@ function sizeFor(neuron: ReactElement<NetworkGraphNeuronProps>): NodeSize {
   return neuron.props.size ?? DEFAULT_NEURON_SIZE;
 }
 
-function layerNeurons(children: ReactNode): ReactElement<NetworkGraphNeuronProps>[] {
+function leftSlotWidthFor(
+  neuron: ReactElement<NetworkGraphNeuronProps>,
+): number {
+  return neuron.props.leftSlot
+    ? (neuron.props.leftSlotWidth ?? DEFAULT_LEFT_SLOT_WIDTH)
+    : 0;
+}
+
+function layerNeurons(
+  children: ReactNode,
+): ReactElement<NetworkGraphNeuronProps>[] {
   return Children.toArray(children).filter(
     (child): child is ReactElement<NetworkGraphNeuronProps> =>
-      isValidElement<NetworkGraphNeuronProps>(child) && child.type === NetworkGraphNeuron,
+      isValidElement<NetworkGraphNeuronProps>(child) &&
+      child.type === NetworkGraphNeuron,
   );
 }
 
-function layerSlots(children: ReactNode): ReactElement<NetworkGraphLayerSlotProps>[] {
+function layerSlots(
+  children: ReactNode,
+): ReactElement<NetworkGraphLayerSlotProps>[] {
   return Children.toArray(children).filter(
     (child): child is ReactElement<NetworkGraphLayerSlotProps> =>
-      isValidElement<NetworkGraphLayerSlotProps>(child) && child.type === NetworkGraphLayerSlot,
+      isValidElement<NetworkGraphLayerSlotProps>(child) &&
+      child.type === NetworkGraphLayerSlot,
   );
 }
 
-export const NetworkGraphNeuron = ({ children, field, position }: NetworkGraphNeuronProps) => {
+export const NetworkGraphNeuron = ({
+  children,
+  field,
+  isSelectable = false,
+  isSelected = false,
+  leftSlot,
+  leftSlotWidth = DEFAULT_LEFT_SLOT_WIDTH,
+  onSelect,
+  position,
+}: NetworkGraphNeuronProps) => {
   const clipId = useId();
-  const activationMap = useMemo(() => (field ? activationFieldDataUrl(field) : ""), [field]);
+  const activationMap = useMemo(
+    () => (field ? activationFieldDataUrl(field) : ""),
+    [field],
+  );
   if (!position) {
     return null;
   }
@@ -91,23 +129,88 @@ export const NetworkGraphNeuron = ({ children, field, position }: NetworkGraphNe
   const { width, height } = position;
   const left = position.x - width / 2;
   const top = position.y - height / 2;
+  const handleKeyDown = (event: KeyboardEvent<SVGElement>) => {
+    if (
+      !isSelectable ||
+      !onSelect ||
+      (event.key !== "Enter" && event.key !== " ")
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    onSelect();
+  };
+  const selectableProps = isSelectable
+    ? {
+        "aria-pressed": isSelected,
+        onClick: onSelect,
+        onKeyDown: handleKeyDown,
+        role: "button",
+        tabIndex: 0,
+      }
+    : {};
+  const selectionClassName = isSelectable
+    ? isSelected
+      ? "opacity-100"
+      : "opacity-35 hover:opacity-75"
+    : undefined;
 
   if (children) {
     return (
-      <foreignObject x={left} y={top} width={width} height={height}>
-        <div className="h-full w-full">{children}</div>
+      <foreignObject
+        {...selectableProps}
+        className={cn(
+          isSelectable && "cursor-pointer focus:outline-none",
+          selectionClassName,
+        )}
+        x={left}
+        y={top}
+        width={width}
+        height={height}
+      >
+        <div
+          className={cn("h-full w-full", isSelectable && "transition-opacity")}
+        >
+          {children}
+        </div>
       </foreignObject>
     );
   }
 
   return (
-    <g>
+    <g
+      {...selectableProps}
+      className={cn(
+        isSelectable && "cursor-pointer transition-opacity focus:outline-none",
+        selectionClassName,
+      )}
+    >
+      {leftSlot ? (
+        <foreignObject
+          x={left - leftSlotWidth}
+          y={top}
+          width={leftSlotWidth}
+          height={height}
+        >
+          <div className="text-muted-foreground flex h-full items-center justify-end pr-2 text-xs">
+            {leftSlot}
+          </div>
+        </foreignObject>
+      ) : null}
       <defs>
         <clipPath id={clipId}>
           <rect x={left} y={top} width={width} height={height} rx="5" />
         </clipPath>
       </defs>
-      <rect x={left} y={top} width={width} height={height} rx="5" fill="var(--card)" />
+      <rect
+        x={left}
+        y={top}
+        width={width}
+        height={height}
+        rx="5"
+        fill="var(--card)"
+      />
       {activationMap ? (
         <image
           clipPath={`url(#${clipId})`}
@@ -147,10 +250,15 @@ function updateConnectionVisuals(
       continue;
     }
 
-    const magnitude = Math.min(Math.abs(connection.props.weight) / maxWeight, 1);
+    const magnitude = Math.min(
+      Math.abs(connection.props.weight) / maxWeight,
+      1,
+    );
 
     path.style.stroke =
-      connection.props.weight >= 0 ? "var(--network-positive)" : "var(--network-negative)";
+      connection.props.weight >= 0
+        ? "var(--network-positive)"
+        : "var(--network-negative)";
     path.style.strokeDashoffset = `${-iteration / 3}`;
     path.style.strokeOpacity = `${0.4 + magnitude * 0.6}`;
     path.style.strokeWidth = `${1.25 + magnitude * 2.5}`;
@@ -190,7 +298,11 @@ export const NetworkGraphConnection = memo(function NetworkGraphConnection({
   }
 
   const controlX =
-    (fromPosition.x + fromPosition.width / 2 + toPosition.x - toPosition.width / 2) / 2;
+    (fromPosition.x +
+      fromPosition.width / 2 +
+      toPosition.x -
+      toPosition.width / 2) /
+    2;
 
   const path = `M ${fromPosition.x + fromPosition.width / 2} ${fromPosition.y} C ${controlX} ${fromPosition.y}, ${controlX} ${toPosition.y}, ${toPosition.x - toPosition.width / 2} ${toPosition.y}`;
 
@@ -232,38 +344,48 @@ export const NetworkGraphLayerSlot = ({
 
 export const NetworkGraphLayer = ({
   children,
+  width,
   x = 0,
   topOffset = VERTICAL_PADDING,
 }: NetworkGraphLayerProps) => {
   const neurons = layerNeurons(children);
   const slots = layerSlots(children);
+  const leftSlotWidth = Math.max(...neurons.map(leftSlotWidthFor), 0);
   return (
     <g>
       {neurons.map((neuron, index) => {
         const size = sizeFor(neuron);
         return cloneElement(neuron, {
           position: {
-            x,
+            x: width ? x - width / 2 + leftSlotWidth + size.width / 2 : x,
             y: neuronY(index, size.height, topOffset),
             ...size,
           },
         });
       })}
-      {slots.map((slot) => cloneElement(slot, { position: { x, y: VERTICAL_PADDING } }))}
+      {slots.map((slot) =>
+        cloneElement(slot, { position: { x, y: VERTICAL_PADDING } }),
+      )}
     </g>
   );
 };
 
-export const NetworkGraph = ({ children, iteration = 0 }: NetworkGraphProps) => {
+export const NetworkGraph = ({
+  children,
+  iteration = 0,
+}: NetworkGraphProps) => {
   const { ref, size } = useResizeObserver<HTMLDivElement>();
   const connectionElements = useRef(new Map<string, SVGPathElement>());
-  const connectionsRef = useRef<ReactElement<NetworkGraphConnectionProps>[]>([]);
+  const connectionsRef = useRef<ReactElement<NetworkGraphConnectionProps>[]>(
+    [],
+  );
   const frame = useRef<number | null>(null);
 
   const graphChildren = Children.toArray(children).filter(isValidElement);
 
   const layers = graphChildren.filter(
-    (child): child is ReactElement<NetworkGraphLayerProps> => child.type === NetworkGraphLayer,
+    (child): child is ReactElement<NetworkGraphLayerProps> =>
+      child.type === NetworkGraphLayer,
   );
 
   const connections = graphChildren.filter(
@@ -272,7 +394,15 @@ export const NetworkGraph = ({ children, iteration = 0 }: NetworkGraphProps) => 
   );
 
   const layerWidths = layers.map((layer) =>
-    Math.max(...layerNeurons(layer.props.children).map((neuron) => sizeFor(neuron).width), 0),
+    Math.max(
+      ...layerNeurons(layer.props.children).map(
+        (neuron) => sizeFor(neuron).width + leftSlotWidthFor(neuron),
+      ),
+      0,
+    ),
+  );
+  const layerLeftSlotWidths = layers.map((layer) =>
+    Math.max(...layerNeurons(layer.props.children).map(leftSlotWidthFor), 0),
   );
   const slotHeight = Math.max(
     0,
@@ -285,14 +415,24 @@ export const NetworkGraph = ({ children, iteration = 0 }: NetworkGraphProps) => 
     384,
     ...layers.map((layer) => {
       const neurons = layerNeurons(layer.props.children);
-      const tallestNeuron = Math.max(...neurons.map((neuron) => sizeFor(neuron).height), 0);
-      return contentTop + VERTICAL_PADDING + NEURON_SPACING * (neurons.length - 1) + tallestNeuron;
+      const tallestNeuron = Math.max(
+        ...neurons.map((neuron) => sizeFor(neuron).height),
+        0,
+      );
+      return (
+        contentTop +
+        VERTICAL_PADDING +
+        NEURON_SPACING * (neurons.length - 1) +
+        tallestNeuron
+      );
     }),
   );
 
   const availableWidth = Math.max(
     0,
-    size.width - HORIZONTAL_PADDING * 2 - layerWidths.reduce((total, width) => total + width, 0),
+    size.width -
+      HORIZONTAL_PADDING * 2 -
+      layerWidths.reduce((total, width) => total + width, 0),
   );
 
   const layerGap = layers.length > 1 ? availableWidth / (layers.length - 1) : 0;
@@ -300,7 +440,9 @@ export const NetworkGraph = ({ children, iteration = 0 }: NetworkGraphProps) => 
   const layerPositions = layerWidths.map(
     (width, index) =>
       HORIZONTAL_PADDING +
-      layerWidths.slice(0, index).reduce((total, previousWidth) => total + previousWidth, 0) +
+      layerWidths
+        .slice(0, index)
+        .reduce((total, previousWidth) => total + previousWidth, 0) +
       layerGap * index +
       width / 2,
   );
@@ -309,16 +451,21 @@ export const NetworkGraph = ({ children, iteration = 0 }: NetworkGraphProps) => 
     1e-6,
     ...connections.map((connection) => Math.abs(connection.props.weight)),
   );
-  const connectionTopology = connections.map((connection) => connection.props.id).join("|");
+  const connectionTopology = connections
+    .map((connection) => connection.props.id)
+    .join("|");
 
-  const setConnectionElement = useCallback((id: string, element: SVGPathElement | null) => {
-    if (element) {
-      connectionElements.current.set(id, element);
-      return;
-    }
+  const setConnectionElement = useCallback(
+    (id: string, element: SVGPathElement | null) => {
+      if (element) {
+        connectionElements.current.set(id, element);
+        return;
+      }
 
-    connectionElements.current.delete(id);
-  }, []);
+      connectionElements.current.delete(id);
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
     connectionsRef.current = connections;
@@ -349,7 +496,11 @@ export const NetworkGraph = ({ children, iteration = 0 }: NetworkGraphProps) => 
     neurons.forEach((neuron, neuronIndex) => {
       const neuronSize = sizeFor(neuron);
       positions.set(neuron.props.id, {
-        x: layerPositions[layerIndex],
+        x:
+          layerPositions[layerIndex] -
+          layerWidths[layerIndex] / 2 +
+          layerLeftSlotWidths[layerIndex] +
+          neuronSize.width / 2,
         y: neuronY(neuronIndex, neuronSize.height, contentTop),
         ...neuronSize,
       });
@@ -383,6 +534,7 @@ export const NetworkGraph = ({ children, iteration = 0 }: NetworkGraphProps) => 
         <g>
           {layers.map((layer, index) =>
             cloneElement(layer, {
+              width: layerWidths[index],
               x: layerPositions[index],
               topOffset: contentTop,
             }),

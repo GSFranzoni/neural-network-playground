@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { FeatureSchema, type Feature } from "@/lib/features";
 import { useAppForm } from "@/lib/form";
 
 export const ActivationSchema = z.enum(["relu", "tanh", "sigmoid", "linear"]);
@@ -19,6 +20,7 @@ export const NetworkConfigFormSchema = z.object({
     )
     .min(1)
     .max(6),
+  features: z.set(FeatureSchema),
 });
 
 export type NetworkConfigFormSchema = z.infer<typeof NetworkConfigFormSchema>;
@@ -36,6 +38,7 @@ export const NetworkConfigDefaultValues = {
   ],
   learningRate: 0.003,
   noise: 0,
+  features: new Set(),
 } as NetworkConfigFormSchema;
 
 export const useNetworkConfigForm = () => {
@@ -55,9 +58,24 @@ export const useNetworkConfigForm = () => {
     form.setFieldValue("hiddenLayers", (layers) => layers.slice(0, -1));
   };
 
+  const toggleFeature = (feature: Feature) => {
+    form.setFieldValue("features", (features) => {
+      const nextFeatures = new Set(features);
+
+      if (nextFeatures.has(feature)) {
+        nextFeatures.delete(feature);
+      } else {
+        nextFeatures.add(feature);
+      }
+
+      return nextFeatures;
+    });
+  };
+
   return {
     form,
     addHiddenLayer,
     removeHiddenLayer,
+    toggleFeature,
   };
 };

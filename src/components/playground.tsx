@@ -27,6 +27,7 @@ import { useNetwork } from "@/hooks/use-network";
 import { useNetworkConfigForm } from "@/hooks/use-network-config-form";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
 import { useTraining } from "@/hooks/use-training";
+import { featureDefinitions, FeatureSchema, type Feature } from "@/lib/features";
 import type { Bounds } from "@/types/app";
 
 const bounds: Bounds = {
@@ -55,27 +56,33 @@ function neuronId(layer: number, neuron: number): string {
   return `layer-${layer}-neuron-${neuron}`;
 }
 
+function featureNeuronId(feature: Feature): string {
+  return `feature-${feature}`;
+}
+
 export const Playground = () => {
-  const { form, addHiddenLayer, removeHiddenLayer } = useNetworkConfigForm();
+  const { form, addHiddenLayer, removeHiddenLayer, toggleFeature } = useNetworkConfigForm();
 
   const { values } = useSelector(form.store, (state) => state);
 
   const config = useDeferredValue(values);
 
-  const { dataset, hiddenLayers, inputLayer, network, neuronCount, outputLayer, recreateNetwork } =
-    useNetwork({
-      config,
-    });
+  const { dataset, hiddenLayers, network, neuronCount, outputLayer, recreateNetwork } = useNetwork({
+    config,
+  });
 
   const hiddenLayerCount = config.hiddenLayers.length;
+
+  const selectedFeatures = Array.from(config.features);
 
   const training = useTraining({
     config,
     network,
   });
 
-  const { activations: fields } = useNetworkVisualization({
+  const { activations: fields, inputActivations } = useNetworkVisualization({
     bounds,
+    features: config.features,
     network,
     neuronCount,
   });
@@ -277,15 +284,24 @@ export const Playground = () => {
           <NetworkGraph iteration={training.data.epoch}>
             <NetworkGraphLayer>
               <NetworkGraphLayerSlot height={24}>
-                <div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
+                <div className="text-muted-foreground flex h-full justify-center gap-2 text-xs">
                   <h3>Features</h3>
                 </div>
               </NetworkGraphLayerSlot>
-              {Array.from({ length: inputLayer.size }, (_, neuronIndex) => (
+              {FeatureSchema.options.map((feature, featureIndex) => (
                 <NetworkGraphNeuron
-                  key={neuronIndex}
-                  id={neuronId(0, neuronIndex)}
-                  field={fields[0][neuronIndex]}
+                  key={feature}
+                  id={featureNeuronId(feature)}
+                  field={inputActivations[featureIndex]}
+                  isSelectable
+                  isSelected={config.features.has(feature)}
+                  leftSlot={
+                    <span className="line-clamp-1 text-[10px]">
+                      {featureDefinitions[feature].label}
+                    </span>
+                  }
+                  leftSlotWidth={38}
+                  onSelect={() => toggleFeature(feature)}
                 />
               ))}
             </NetworkGraphLayer>
@@ -318,6 +334,7 @@ export const Playground = () => {
                   bounds={bounds}
                   compact
                   dataset={dataset}
+                  features={config.features}
                   network={network}
                   revision={training.data.epoch}
                   className="rounded-3xl"
@@ -327,11 +344,16 @@ export const Playground = () => {
             {[...hiddenLayers, outputLayer].flatMap((layer, layerIndex) =>
               layer.weights.flatMap((row, destinationIndex) =>
                 row.map((weight, sourceIndex) => {
-                  const from = neuronId(layerIndex, sourceIndex);
+                  const from =
+                    layerIndex === 0
+                      ? featureNeuronId(selectedFeatures[sourceIndex]!)
+                      : neuronId(layerIndex, sourceIndex);
+
                   const to =
                     layerIndex === hiddenLayers.length
                       ? "output"
                       : neuronId(layerIndex + 1, destinationIndex);
+
                   const id = `connection-${from}-${to}`;
 
                   return (

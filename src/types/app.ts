@@ -12,8 +12,10 @@ export const ClassLabel = {
 
 export type ClassLabel = (typeof ClassLabel)[keyof typeof ClassLabel];
 
-export type Dataset = Array<{
+export type Sample = {
   x: number;
   y: number;
   label: ClassLabel;
-}>;
+};
+
+export type Dataset = Array<Sample>;

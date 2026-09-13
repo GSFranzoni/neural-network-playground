@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAnimationFrameInterval } from "@/hooks/use-animation-frame-interval";
 import { useNetworkConfigChange } from "@/hooks/use-network-config-change";
 import type { NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
+import { encodeCoordinates } from "@/lib/features";
 import { binaryCrossEntropy, NeuralNetwork, SGD } from "@/lib/neural-network";
 import { datasets } from "@/mocks/dataset";
 import type { Dataset } from "@/types/app";
@@ -33,21 +34,25 @@ const UPDATE_INTERVAL_MS = 20;
 
 const MAX_HISTORY_POINTS = 60;
 
-const initialTrainingState: TrainingState = { epoch: 0, history: [], metrics: null };
+const initialTrainingState: TrainingState = {
+  epoch: 0,
+  history: [],
+  metrics: null,
+};
 
 function trainNetwork(
   network: NeuralNetwork,
   dataset: Dataset,
-  learningRate: number,
+  config: NetworkConfigFormSchema,
   epochs: number,
 ): TrainingMetrics {
-  const optimizer = new SGD(learningRate);
+  const optimizer = new SGD(config.learningRate);
   let totalLoss = 0;
   let correct = 0;
 
   for (let epoch = 0; epoch < epochs; epoch++) {
     for (const sample of dataset) {
-      const [logit] = network.forward([sample.x, sample.y]);
+      const [logit] = network.forward(encodeCoordinates(sample.x, sample.y, config.features));
       const result = binaryCrossEntropy(logit, sample.label);
       totalLoss += result.loss;
       correct += Number((logit >= 0 ? 1 : 0) === sample.label);
@@ -68,7 +73,7 @@ export function useTraining({ config, network }: Props) {
 
   const dataset = datasets(config.noise)[config.dataset];
 
-  const train = (epochs: number) => trainNetwork(network, dataset, config.learningRate, epochs);
+  const train = (epochs: number) => trainNetwork(network, dataset, config, epochs);
 
   const handleBatch = (metrics: TrainingMetrics, epochs: number) => {
     setData((current) => {

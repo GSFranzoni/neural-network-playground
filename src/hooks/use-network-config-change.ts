@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const useNetworkConfigChange = ({ config, onChange }: Props) => {
-  const trainingConfigurationKey = `${config.dataset}:${config.activation}:${config.noise}:${config.hiddenLayers.map(({ neurons }) => neurons).join(",")}`;
+  const trainingConfigurationKey = `${config.dataset}:${config.activation}:${config.noise}:${config.hiddenLayers.map(({ neurons }) => neurons).join(",")}:${Array.from(config.features).sort().join(",")}`;
 
   const previousTrainingConfigurationKey = useRef(trainingConfigurationKey);
 
