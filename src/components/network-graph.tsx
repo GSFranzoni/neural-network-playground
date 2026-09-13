@@ -1,7 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
-import { Children, cloneElement, isValidElement, useId } from "react";
+import { Children, cloneElement, isValidElement, useId, useMemo } from "react";
 
 import { useResizeObserver } from "@/hooks/use-resize-observer";
+import { activationFieldDataUrl } from "@/lib/canvas";
 import type { ScalarField } from "@/lib/field";
 
 type NodeSize = { width: number; height: number };
@@ -66,17 +67,6 @@ function sizeFor(neuron: ReactElement<NetworkGraphNeuronProps>): NodeSize {
   return neuron.props.size ?? DEFAULT_NEURON_SIZE;
 }
 
-function activationCells(field: ScalarField) {
-  const cells = field.values.flatMap((row, rowIndex) =>
-    row.map((value, column) => ({ row: rowIndex, column, value })),
-  );
-  const maxMagnitude = Math.max(1e-6, ...cells.map((cell) => Math.abs(cell.value)));
-  return cells.map((cell) => ({
-    ...cell,
-    opacity: 0.12 + (Math.abs(cell.value) / maxMagnitude) * 0.88,
-  }));
-}
-
 function layerNeurons(children: ReactNode): ReactElement<NetworkGraphNeuronProps>[] {
   return Children.toArray(children).filter(
     (child): child is ReactElement<NetworkGraphNeuronProps> =>
@@ -93,6 +83,7 @@ function layerSlots(children: ReactNode): ReactElement<NetworkGraphLayerSlotProp
 
 export const NetworkGraphNeuron = ({ children, field, position }: NetworkGraphNeuronProps) => {
   const clipId = useId();
+  const activationMap = useMemo(() => (field ? activationFieldDataUrl(field) : ""), [field]);
   if (!position) {
     return null;
   }
@@ -100,9 +91,6 @@ export const NetworkGraphNeuron = ({ children, field, position }: NetworkGraphNe
   const { width, height } = position;
   const left = position.x - width / 2;
   const top = position.y - height / 2;
-  const cellWidth = field?.values[0]?.length ? width / field.values[0].length : 0;
-  const cellHeight = field?.values.length ? height / field.values.length : 0;
-  const cells = field ? activationCells(field) : [];
 
   if (children) {
     return (
@@ -120,19 +108,17 @@ export const NetworkGraphNeuron = ({ children, field, position }: NetworkGraphNe
         </clipPath>
       </defs>
       <rect x={left} y={top} width={width} height={height} rx="5" fill="var(--card)" />
-      <g clipPath={`url(#${clipId})`}>
-        {cells.map((cell) => (
-          <rect
-            key={`${cell.row}-${cell.column}`}
-            x={left + cell.column * cellWidth}
-            y={top + cell.row * cellHeight}
-            width={cellWidth + 0.25}
-            height={cellHeight + 0.25}
-            fill={cell.value >= 0 ? "var(--network-positive)" : "var(--network-negative)"}
-            fillOpacity={cell.opacity}
-          />
-        ))}
-      </g>
+      {activationMap ? (
+        <image
+          clipPath={`url(#${clipId})`}
+          height={height}
+          href={activationMap}
+          preserveAspectRatio="none"
+          width={width}
+          x={left}
+          y={top}
+        />
+      ) : null}
       <rect
         x={left}
         y={top}

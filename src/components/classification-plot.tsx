@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { useResizeObserver } from "@/hooks/use-resize-observer";
 import { classificationColorScale, drawField } from "@/lib/canvas";
@@ -24,6 +24,8 @@ export const ClassificationPlot: React.FC<Props> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const colorScale = useMemo(() => classificationColorScale(), []);
+
   const { ref: containerRef, size } = useResizeObserver<HTMLDivElement>();
 
   useEffect(() => {
@@ -31,8 +33,8 @@ export const ClassificationPlot: React.FC<Props> = ({
     if (!canvas || size.width === 0 || size.height === 0) {
       return;
     }
-    drawField(canvas, field, classificationColorScale(), size);
-  }, [field, size]);
+    drawField(canvas, field, colorScale, size);
+  }, [colorScale, field, size]);
 
   const toScreenX = (x: number) => ((x - bounds.minX) / (bounds.maxX - bounds.minX)) * size.width;
 

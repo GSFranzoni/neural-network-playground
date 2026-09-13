@@ -29,6 +29,42 @@ export function classificationColorScale(): FieldColorScale {
   ];
 }
 
+export function activationFieldDataUrl(field: ScalarField): string {
+  const rows = field.values.length;
+  const columns = field.values[0]?.length ?? 0;
+  const canvas = document.createElement("canvas");
+  canvas.width = columns;
+  canvas.height = rows;
+
+  const context = canvas.getContext("2d");
+  if (!context || rows === 0 || columns === 0) {
+    return "";
+  }
+
+  const positive = colorFromToken("--network-positive");
+  const negative = colorFromToken("--network-negative");
+  const maxMagnitude = Math.max(
+    1e-6,
+    ...field.values.flatMap((row) => row.map((value) => Math.abs(value))),
+  );
+  const image = context.createImageData(columns, rows);
+
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < columns; column++) {
+      const value = field.values[row][column];
+      const color = value >= 0 ? positive : negative;
+      const index = (row * columns + column) * 4;
+      image.data[index] = color[0];
+      image.data[index + 1] = color[1];
+      image.data[index + 2] = color[2];
+      image.data[index + 3] = Math.round((0.12 + (Math.abs(value) / maxMagnitude) * 0.88) * 255);
+    }
+  }
+
+  context.putImageData(image, 0, 0);
+  return canvas.toDataURL();
+}
+
 function resizeCanvas(canvas: HTMLCanvasElement, size: Size): CanvasRenderingContext2D | null {
   const context = canvas.getContext("2d");
   if (!context) {

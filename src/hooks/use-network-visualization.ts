@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
 import { type NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
-import { sampleField } from "@/lib/field";
+import { sampleField, type ScalarField } from "@/lib/field";
 import {
   DenseLayer,
   InputLayer,
@@ -57,27 +57,52 @@ function activationLayer(activation: NetworkConfigFormSchema["activation"]): Lay
   }
 }
 
+function sampleActivationFields(
+  bounds: Bounds,
+  network: NeuralNetwork,
+  neuronCount: number[],
+  resolution: number,
+): ScalarField[][] {
+  const values = neuronCount.map((count) =>
+    Array.from({ length: count }, () =>
+      Array.from({ length: resolution }, () => Array<number>(resolution)),
+    ),
+  );
+
+  for (let row = 0; row < resolution; row++) {
+    const y = bounds.maxY - ((row + 0.5) / resolution) * (bounds.maxY - bounds.minY);
+
+    for (let column = 0; column < resolution; column++) {
+      const x = bounds.minX + ((column + 0.5) / resolution) * (bounds.maxX - bounds.minX);
+      const activations = activationsFor(network, [x, y]);
+
+      for (let layerIndex = 0; layerIndex < activations.length; layerIndex++) {
+        for (let neuronIndex = 0; neuronIndex < activations[layerIndex].length; neuronIndex++) {
+          values[layerIndex][neuronIndex][row][column] = activations[layerIndex][neuronIndex];
+        }
+      }
+    }
+  }
+
+  return values.map((layer) => layer.map((values) => ({ values })));
+}
+
 type Props = {
   bounds: Bounds;
   formValues: NetworkConfigFormSchema;
 };
 
 export function useNetworkVisualization({ bounds, formValues }: Props) {
+  const hiddenLayerSignature = formValues.hiddenLayers.map((layer) => layer.neurons).join(",");
+
   const { network, inputLayer, hiddenLayers, outputLayer, neuronCount } = useMemo(() => {
     const inputLayer = new InputLayer(2);
-
-    const outputLayer = new OutputLayer(
-      inputLayer.size,
-      formValues.hiddenLayers.at(-1)?.neurons ?? 1,
+    const hiddenLayerSizes = hiddenLayerSignature.split(",").map(Number);
+    const hiddenLayers = hiddenLayerSizes.map(
+      (neurons, index) =>
+        new DenseLayer(index === 0 ? inputLayer.size : hiddenLayerSizes[index - 1], neurons),
     );
-
-    const hiddenLayers = formValues.hiddenLayers.map(
-      ({ neurons }, index) =>
-        new DenseLayer(
-          index === 0 ? inputLayer.size : Number(formValues.hiddenLayers[index - 1].neurons),
-          neurons,
-        ),
-    );
+    const outputLayer = new OutputLayer(hiddenLayers.at(-1)?.outputSize ?? inputLayer.size, 1);
 
     const neuronCount = [
       inputLayer.size,
@@ -98,20 +123,12 @@ export function useNetworkVisualization({ bounds, formValues }: Props) {
       outputLayer,
       neuronCount,
     };
-  }, [formValues]);
+  }, [formValues.activation, hiddenLayerSignature]);
 
   const { classification, activations } = useMemo(
     () => ({
       classification: sampleField(bounds, 160, (x, y) => classConfidence(network.forward([x, y]))),
-      activations: neuronCount.map((count, layerIndex) =>
-        Array.from({ length: count }, (_, neuronIndex) =>
-          sampleField(
-            bounds,
-            32,
-            (x, y) => activationsFor(network, [x, y])[layerIndex][neuronIndex],
-          ),
-        ),
-      ),
+      activations: sampleActivationFields(bounds, network, neuronCount, 32),
     }),
     [bounds, network, neuronCount],
   );

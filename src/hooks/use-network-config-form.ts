@@ -22,10 +22,13 @@ export const NetworkConfigFormSchema = z.object({
 
 export type NetworkConfigFormSchema = z.infer<typeof NetworkConfigFormSchema>;
 
-export const NetworkConfigFormValues = {
-  activation: "linear",
+export const NetworkConfigDefaultValues = {
+  activation: "tanh",
   dataset: "circle",
   hiddenLayers: [
+    {
+      neurons: 8,
+    },
     {
       neurons: 8,
     },
@@ -43,7 +46,7 @@ type Props = {
 export const useNetworkConfigForm = ({ onChange }: Props) => {
   const form = useAppForm({
     validators: { onChange: NetworkConfigFormSchema },
-    defaultValues: NetworkConfigFormValues,
+    defaultValues: NetworkConfigDefaultValues,
     listeners: {
       onChange: ({ formApi }) => {
         onChange(formApi.state.values);

@@ -9,8 +9,8 @@ import {
   NetworkGraphNeuron,
 } from "@/components/network-graph";
 import {
+  NetworkConfigDefaultValues,
   NetworkConfigFormSchema,
-  NetworkConfigFormValues,
   useNetworkConfigForm,
 } from "@/hooks/use-network-config-form";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
@@ -28,7 +28,7 @@ function neuronId(layer: number, neuron: number): string {
 }
 
 export const Playground = () => {
-  const [formValues, setFormValues] = useState<NetworkConfigFormSchema>(NetworkConfigFormValues);
+  const [formValues, setFormValues] = useState<NetworkConfigFormSchema>(NetworkConfigDefaultValues);
 
   const { form } = useNetworkConfigForm({
     onChange: setFormValues,
