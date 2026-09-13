@@ -81,29 +81,25 @@ export const Playground = () => {
   });
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="bg-primary text-primary-foreground flex size-10 shrink-0 items-center justify-center rounded-2xl">
+    <div className="flex flex-col gap-8 lg:gap-10">
+      <header className="flex flex-col gap-5">
+        <div className="flex items-start gap-4">
+          <div className="bg-primary text-primary-foreground shadow-primary/20 flex size-12 shrink-0 items-center justify-center rounded-[1.15rem] shadow-lg">
             <BrainCircuitIcon />
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex max-w-2xl flex-col gap-1.5">
             <p className="text-muted-foreground text-sm font-medium">Neural network sandbox</p>
-            <h1 className="font-heading text-3xl font-semibold tracking-tight">
+            <h1 className="font-heading text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
               Classification lab
             </h1>
-            <p className="text-muted-foreground max-w-xl text-sm">
+            <p className="text-muted-foreground max-w-xl text-[0.95rem] leading-6">
               Explore how layer width and activation functions shape a decision surface.
             </p>
           </div>
         </div>
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
-          <span className="bg-network-positive size-2 rounded-full" />
-          Live visualization
-        </div>
       </header>
-      <div className="grid items-start gap-6 xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <Card size="sm">
+      <div className="grid items-start gap-6 xl:grid-cols-[20rem_minmax(0,1fr)] xl:gap-8">
+        <Card className="xl:sticky xl:top-6" size="sm">
           <CardContent>
             <form onSubmit={(event) => event.preventDefault()}>
               <FieldGroup className="gap-5">
@@ -214,115 +210,128 @@ export const Playground = () => {
               </FieldGroup>
             </form>
           </CardContent>
-          <CardFooter className="flex-wrap justify-between gap-3 border-t">
-            <div className="flex items-center gap-2">
-              <Button
-                aria-label={training.running ? "Pause training" : "Start training"}
-                onClick={training.running ? training.stop : training.start}
-                size="icon-sm"
-                type="button"
-                variant={training.running ? "secondary" : "default"}
-              >
-                {training.running ? (
-                  <PauseIcon data-icon="inline-start" />
-                ) : (
-                  <PlayIcon data-icon="inline-start" />
-                )}
-              </Button>
-              <Button
-                aria-label="Reset training"
-                disabled={training.data.epoch === 0}
-                onClick={() => {
-                  recreateNetwork();
-                  training.reset();
-                }}
-                size="icon-sm"
-                type="button"
-                variant="outline"
-              >
-                <RotateCcwIcon />
-              </Button>
+          <CardFooter className="flex-col items-stretch gap-4 border-t">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  aria-label={training.running ? "Pause training" : "Start training"}
+                  onClick={training.running ? training.stop : training.start}
+                  size="icon-sm"
+                  type="button"
+                  variant={training.running ? "secondary" : "default"}
+                >
+                  {training.running ? (
+                    <PauseIcon data-icon="inline-start" />
+                  ) : (
+                    <PlayIcon data-icon="inline-start" />
+                  )}
+                </Button>
+                <Button
+                  aria-label="Reset training"
+                  disabled={training.data.epoch === 0}
+                  onClick={() => {
+                    recreateNetwork();
+                    training.reset();
+                  }}
+                  size="icon-sm"
+                  type="button"
+                  variant="outline"
+                >
+                  <RotateCcwIcon />
+                </Button>
+              </div>
+              <span className="text-muted-foreground text-xs font-medium">
+                {training.running ? "Treinando" : "Pausado"}
+              </span>
             </div>
             {training.data.metrics && (
-              <div className="text-muted-foreground mt-2 flex w-full items-center gap-2 text-xs tabular-nums *:w-15">
+              <div className="grid grid-cols-3 gap-2 text-xs tabular-nums">
                 <span>
-                  <strong>Epoch</strong>
-                  <p>{training.data.epoch}</p>
+                  <strong className="text-muted-foreground font-medium">Epoch</strong>
+                  <p className="text-foreground mt-1 text-sm font-semibold">
+                    {training.data.epoch}
+                  </p>
                 </span>
                 <span>
-                  <strong>Loss</strong>
-                  <p>{training.data.metrics.loss.toFixed(3)}</p>
+                  <strong className="text-muted-foreground font-medium">Loss</strong>
+                  <p className="text-foreground mt-1 text-sm font-semibold">
+                    {training.data.metrics.loss.toFixed(3)}
+                  </p>
                 </span>
                 <span>
-                  <strong>Accuracy</strong>
-                  <p>{(training.data.metrics.accuracy * 100).toFixed(0)}%</p>
+                  <strong className="text-muted-foreground font-medium">Accuracy</strong>
+                  <p className="text-foreground mt-1 text-sm font-semibold">
+                    {(training.data.metrics.accuracy * 100).toFixed(0)}%
+                  </p>
                 </span>
-              </div>
-            )}
-            {training.data.history.length > 1 && (
-              <div className="w-full overflow-hidden rounded-b-2xl">
-                <TrainingLossChart data={training.data.history} />
               </div>
             )}
           </CardFooter>
+          {training.data.history.length > 1 && (
+            <div className="bg-muted/50 -mx-4 -mb-4 overflow-hidden border-t pt-2">
+              <TrainingLossChart data={training.data.history} />
+            </div>
+          )}
         </Card>
-        <NetworkGraph iteration={training.data.epoch}>
-          <NetworkGraphLayer>
-            {Array.from({ length: inputLayer.size }, (_, neuronIndex) => (
-              <NetworkGraphNeuron
-                key={neuronIndex}
-                id={neuronId(0, neuronIndex)}
-                field={fields[0][neuronIndex]}
-              />
-            ))}
-          </NetworkGraphLayer>
-          {hiddenLayers.map((layer, layerIndex) => (
-            <NetworkGraphLayer key={layerIndex}>
-              <NetworkGraphLayerSlot height={48}>
-                <div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
-                  <form.AppField name={`hiddenLayers[${layerIndex}].neurons`}>
-                    {(field) => <field.FormStepper min={1} max={8} size="icon-xs" />}
-                  </form.AppField>
-                </div>
-              </NetworkGraphLayerSlot>
-              {Array.from({ length: layer.outputSize }, (_, neuronIndex) => (
+        <section className="min-w-0">
+          <NetworkGraph iteration={training.data.epoch}>
+            <NetworkGraphLayer>
+              {Array.from({ length: inputLayer.size }, (_, neuronIndex) => (
                 <NetworkGraphNeuron
                   key={neuronIndex}
-                  id={neuronId(layerIndex + 1, neuronIndex)}
-                  field={fields[layerIndex + 1][neuronIndex]}
+                  id={neuronId(0, neuronIndex)}
+                  field={fields[0][neuronIndex]}
                 />
               ))}
             </NetworkGraphLayer>
-          ))}
-          <NetworkGraphLayer>
-            <NetworkGraphNeuron id="output" size={{ width: 280, height: 280 }}>
-              <ClassificationPlot
-                bounds={bounds}
-                compact
-                dataset={dataset}
-                network={network}
-                revision={training.data.epoch}
-                className="rounded-3xl"
-              />
-            </NetworkGraphNeuron>
-          </NetworkGraphLayer>
-          {[...hiddenLayers, outputLayer].flatMap((layer, layerIndex) =>
-            layer.weights.flatMap((row, destinationIndex) =>
-              row.map((weight, sourceIndex) => {
-                const from = neuronId(layerIndex, sourceIndex);
-                const to =
-                  layerIndex === hiddenLayers.length
-                    ? "output"
-                    : neuronId(layerIndex + 1, destinationIndex);
-                const id = `connection-${from}-${to}`;
+            {hiddenLayers.map((layer, layerIndex) => (
+              <NetworkGraphLayer key={layerIndex}>
+                <NetworkGraphLayerSlot height={48}>
+                  <div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
+                    <form.AppField name={`hiddenLayers[${layerIndex}].neurons`}>
+                      {(field) => <field.FormStepper min={1} max={8} size="icon-xs" />}
+                    </form.AppField>
+                  </div>
+                </NetworkGraphLayerSlot>
+                {Array.from({ length: layer.outputSize }, (_, neuronIndex) => (
+                  <NetworkGraphNeuron
+                    key={neuronIndex}
+                    id={neuronId(layerIndex + 1, neuronIndex)}
+                    field={fields[layerIndex + 1][neuronIndex]}
+                  />
+                ))}
+              </NetworkGraphLayer>
+            ))}
+            <NetworkGraphLayer>
+              <NetworkGraphNeuron id="output" size={{ width: 280, height: 280 }}>
+                <ClassificationPlot
+                  bounds={bounds}
+                  compact
+                  dataset={dataset}
+                  network={network}
+                  revision={training.data.epoch}
+                  className="rounded-3xl"
+                />
+              </NetworkGraphNeuron>
+            </NetworkGraphLayer>
+            {[...hiddenLayers, outputLayer].flatMap((layer, layerIndex) =>
+              layer.weights.flatMap((row, destinationIndex) =>
+                row.map((weight, sourceIndex) => {
+                  const from = neuronId(layerIndex, sourceIndex);
+                  const to =
+                    layerIndex === hiddenLayers.length
+                      ? "output"
+                      : neuronId(layerIndex + 1, destinationIndex);
+                  const id = `connection-${from}-${to}`;
 
-                return (
-                  <NetworkGraphConnection key={id} id={id} from={from} to={to} weight={weight} />
-                );
-              }),
-            ),
-          )}
-        </NetworkGraph>
+                  return (
+                    <NetworkGraphConnection key={id} id={id} from={from} to={to} weight={weight} />
+                  );
+                }),
+              ),
+            )}
+          </NetworkGraph>
+        </section>
       </div>
     </div>
   );

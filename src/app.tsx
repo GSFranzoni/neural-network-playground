@@ -2,7 +2,7 @@ import { Playground } from "@/components/playground";
 
 export function App() {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[100rem] p-4 sm:p-6 lg:p-8">
+    <main className="mx-auto min-h-screen w-full max-w-[112rem] px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
       <Playground />
     </main>
   );

@@ -363,7 +363,7 @@ export const NetworkGraph = ({ children, iteration = 0 }: NetworkGraphProps) => 
       style={{ minHeight: graphMinimumHeight }}
     >
       <svg
-        className="h-full w-full"
+        className="block size-full"
         viewBox={`0 0 ${size.width} ${size.height}`}
         role="img"
         aria-label="Neural network graph"
