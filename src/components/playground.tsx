@@ -23,6 +23,7 @@ import { TrainingLossChart } from "@/components/training-loss-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { useNetwork } from "@/hooks/use-network";
 import { useNetworkConfigForm } from "@/hooks/use-network-config-form";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
 import { useTraining } from "@/hooks/use-training";
@@ -61,21 +62,21 @@ export const Playground = () => {
 
   const config = useDeferredValue(values);
 
-  const {
-    classification,
-    activations: fields,
-    dataset,
-    hiddenLayers,
-    inputLayer,
-    outputLayer,
-    network,
-  } = useNetworkVisualization({ bounds, config });
+  const { dataset, hiddenLayers, inputLayer, network, neuronCount, outputLayer } = useNetwork({
+    config,
+  });
 
   const hiddenLayerCount = config.hiddenLayers.length;
 
   const training = useTraining({
     config,
     network,
+  });
+
+  const { activations: fields } = useNetworkVisualization({
+    bounds,
+    network,
+    neuronCount,
   });
 
   const addHiddenLayer = () => {
@@ -229,17 +230,18 @@ export const Playground = () => {
               </Button>
             </div>
             {training.data.metrics && (
-              <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs tabular-nums">
+              <div className="text-muted-foreground mt-2 flex w-full items-center gap-2 text-xs tabular-nums *:w-15">
                 <span>
-                  <strong>Epoch</strong> {training.data.epoch}
+                  <strong>Epoch</strong>
+                  <p>{training.data.epoch}</p>
                 </span>
-                <span>·</span>
                 <span>
-                  <strong>Loss</strong> {training.data.metrics.loss.toFixed(3)}
+                  <strong>Loss</strong>
+                  <p>{training.data.metrics.loss.toFixed(3)}</p>
                 </span>
-                <span>·</span>
                 <span>
-                  <strong>Accuracy</strong> {(training.data.metrics.accuracy * 100).toFixed(0)}%
+                  <strong>Accuracy</strong>
+                  <p>{(training.data.metrics.accuracy * 100).toFixed(0)}%</p>
                 </span>
               </div>
             )}
@@ -284,7 +286,8 @@ export const Playground = () => {
                 bounds={bounds}
                 compact
                 dataset={dataset}
-                field={classification}
+                network={network}
+                revision={training.data.epoch}
                 className="rounded-3xl"
               />
             </NetworkGraphNeuron>

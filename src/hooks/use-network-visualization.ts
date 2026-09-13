@@ -1,19 +1,7 @@
 import { useMemo } from "react";
 
-import { type NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
-import { sampleField, type ScalarField } from "@/lib/field";
-import {
-  DenseLayer,
-  InputLayer,
-  LinearLayer,
-  NeuralNetwork,
-  OutputLayer,
-  ReLULayer,
-  SigmoidLayer,
-  TanhLayer,
-  type Layer,
-} from "@/lib/neural-network";
-import { datasets } from "@/mocks/dataset";
+import type { ScalarField } from "@/lib/field";
+import { DenseLayer, NeuralNetwork } from "@/lib/neural-network";
 import type { Bounds } from "@/types/app";
 
 function activationsFor(network: NeuralNetwork, input: [number, number]): number[][] {
@@ -30,31 +18,6 @@ function activationsFor(network: NeuralNetwork, input: [number, number]): number
   }
 
   return activations;
-}
-
-function classConfidence(output: number[]): number {
-  if (output.length === 1) {
-    return 1 / (1 + Math.exp(-output[0]));
-  }
-
-  const largest = Math.max(...output);
-
-  const probabilities = output.map((value) => Math.exp(value - largest));
-
-  return probabilities[1] / probabilities.reduce((sum, value) => sum + value, 0);
-}
-
-function activationLayer(activation: NetworkConfigFormSchema["activation"]): Layer {
-  switch (activation) {
-    case "relu":
-      return new ReLULayer();
-    case "sigmoid":
-      return new SigmoidLayer();
-    case "tanh":
-      return new TanhLayer();
-    case "linear":
-      return new LinearLayer();
-  }
 }
 
 function sampleActivationFields(
@@ -87,61 +50,19 @@ function sampleActivationFields(
   return values.map((layer) => layer.map((values) => ({ values })));
 }
 
-type Props = {
+type VisualizationProps = {
   bounds: Bounds;
-  config: NetworkConfigFormSchema;
+  network: NeuralNetwork;
+  neuronCount: number[];
 };
 
-export function useNetworkVisualization({ bounds, config }: Props) {
-  const { network, inputLayer, hiddenLayers, outputLayer, neuronCount } = useMemo(() => {
-    const inputLayer = new InputLayer(2);
-
-    const hiddenLayers = config.hiddenLayers.map(
-      ({ neurons }, index) =>
-        new DenseLayer(
-          index === 0 ? inputLayer.size : config.hiddenLayers[index - 1].neurons,
-          neurons,
-        ),
-    );
-
-    const outputLayer = new OutputLayer(hiddenLayers.at(-1)?.outputSize ?? inputLayer.size, 1);
-
-    const neuronCount = [
-      inputLayer.size,
-      ...hiddenLayers.map((layer) => layer.outputSize),
-      outputLayer.outputSize,
-    ];
-
-    const network = new NeuralNetwork([
-      inputLayer,
-      ...hiddenLayers.flatMap((layer) => [layer, activationLayer(config.activation)]),
-      outputLayer,
-    ]);
-
-    return {
-      network,
-      inputLayer,
-      hiddenLayers,
-      outputLayer,
-      neuronCount,
-    };
-  }, [config.activation, config.hiddenLayers]);
-
-  const dataset = datasets[config.dataset];
-
-  const classification = sampleField(bounds, 160, (x, y) =>
-    classConfidence(network.forward([x, y])),
+export function useNetworkVisualization({ bounds, network, neuronCount }: VisualizationProps) {
+  const activations = useMemo(
+    () => sampleActivationFields(bounds, network, neuronCount, 32),
+    [bounds, network, neuronCount],
   );
 
-  const activations = sampleActivationFields(bounds, network, neuronCount, 32);
-
   return {
-    network,
-    classification,
     activations,
-    inputLayer,
-    hiddenLayers,
-    outputLayer,
-    dataset,
   };
 }

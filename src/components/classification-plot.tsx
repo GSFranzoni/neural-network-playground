@@ -3,14 +3,16 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { useResizeObserver } from "@/hooks/use-resize-observer";
 import { classificationColorScale, drawField } from "@/lib/canvas";
-import type { ScalarField } from "@/lib/field";
+import { sampleField } from "@/lib/field";
+import { NeuralNetwork } from "@/lib/neural-network";
 import { cn } from "@/lib/utils";
 import { ClassLabel, type Bounds, type Dataset } from "@/types/app";
 
 type Props = {
   bounds: Bounds;
   dataset: Dataset;
-  field: ScalarField;
+  network: NeuralNetwork;
+  revision: number;
   className?: string;
   compact?: boolean;
 };
@@ -20,7 +22,8 @@ export const ClassificationPlot: React.FC<Props> = ({
   className,
   compact = false,
   dataset,
-  field,
+  network,
+  revision,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -30,11 +33,26 @@ export const ClassificationPlot: React.FC<Props> = ({
 
   useEffect(() => {
     const canvas = canvasRef.current;
+
     if (!canvas || size.width === 0 || size.height === 0) {
       return;
     }
+
+    const field = sampleField(bounds, 160, (x, y) => {
+      const output = network.forward([x, y]);
+
+      if (output.length === 1) {
+        return 1 / (1 + Math.exp(-output[0]));
+      }
+
+      const largest = Math.max(...output);
+      const probabilities = output.map((value) => Math.exp(value - largest));
+
+      return probabilities[1] / probabilities.reduce((sum, value) => sum + value, 0);
+    });
+
     drawField(canvas, field, colorScale, size);
-  }, [colorScale, field, size]);
+  }, [bounds, colorScale, network, revision, size]);
 
   const toScreenX = (x: number) => ((x - bounds.minX) / (bounds.maxX - bounds.minX)) * size.width;
 

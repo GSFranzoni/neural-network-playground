@@ -28,7 +28,7 @@ type Props = {
 
 const BATCH_EPOCHS = 1;
 
-const UPDATE_INTERVAL_MS = 10;
+const UPDATE_INTERVAL_MS = 120;
 
 const MAX_HISTORY_POINTS = 60;
 
