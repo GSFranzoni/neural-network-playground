@@ -8,7 +8,6 @@ import {
   RotateCcwIcon,
 } from "lucide-react";
 import { useDeferredValue } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
 import { ClassificationPlot } from "@/components/classification-plot";
 import { FormSelect } from "@/components/form/form-select";
@@ -20,16 +19,10 @@ import {
   NetworkGraphLayerSlot,
   NetworkGraphNeuron,
 } from "@/components/network-graph";
+import { TrainingLossChart } from "@/components/training-loss-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Separator } from "@/components/ui/separator";
 import { useNetworkConfigForm } from "@/hooks/use-network-config-form";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
 import { useTraining } from "@/hooks/use-training";
@@ -56,13 +49,6 @@ const activations = [
   { label: "Sigmoid", value: "sigmoid" },
   { label: "Linear", value: "linear" },
 ];
-
-const trainingChartConfig = {
-  loss: {
-    label: "Loss",
-    color: "var(--chart-1)",
-  },
-} satisfies ChartConfig;
 
 function neuronId(layer: number, neuron: number): string {
   return `layer-${layer}-neuron-${neuron}`;
@@ -314,45 +300,28 @@ export const Playground = () => {
                 <RotateCcwIcon />
               </Button>
             </div>
-            <div className="text-muted-foreground flex items-center gap-3 text-xs tabular-nums">
-              <span>Epoch {training.data.epoch}</span>
-              {training.data.metrics ? (
-                <span>
-                  Loss {training.data.metrics.loss.toFixed(3)} · Accuracy{" "}
-                  {(training.data.metrics.accuracy * 100).toFixed(0)}%
-                </span>
-              ) : null}
+            <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs tabular-nums">
+              <span>
+                <strong>Epoch</strong> {training.data.epoch}
+              </span>
+              {training.data.metrics && (
+                <>
+                  <span>·</span>
+                  <span>
+                    <strong>Loss</strong> {training.data.metrics.loss.toFixed(3)}
+                  </span>
+                  <span>·</span>
+                  <span>
+                    <strong>Accuracy</strong> {(training.data.metrics.accuracy * 100).toFixed(0)}%
+                  </span>
+                </>
+              )}
             </div>
-            {training.data.history.length > 1 ? (
-              <>
-                <Separator />
-                <ChartContainer config={trainingChartConfig} className="h-36 w-full">
-                  <AreaChart
-                    accessibilityLayer
-                    data={training.data.history}
-                    margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-                  >
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      axisLine={false}
-                      dataKey="epoch"
-                      minTickGap={28}
-                      tickFormatter={(value) => `${value}`}
-                      tickLine={false}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area
-                      dataKey="loss"
-                      fill="var(--color-loss)"
-                      fillOpacity={0.2}
-                      stroke="var(--color-loss)"
-                      strokeWidth={2}
-                      type="monotone"
-                    />
-                  </AreaChart>
-                </ChartContainer>
-              </>
-            ) : null}
+            {training.data.history.length > 1 && (
+              <div className="w-full overflow-hidden rounded-b-2xl">
+                <TrainingLossChart data={training.data.history} />
+              </div>
+            )}
           </CardFooter>
         </Card>
       </div>
