@@ -76,13 +76,16 @@ function twoMoons(): Dataset {
 
 function spiral(): Dataset {
   const next = random(5);
-  return Array.from({ length: 300 }, (_, index) => {
+  const pointsPerClass = 150;
+
+  return Array.from({ length: pointsPerClass * 2 }, (_, index) => {
     const label = index % 2 === 0 ? ClassLabel.A : ClassLabel.B;
-    const radius = 0.1 + next() * 1.1;
-    const angle = radius * 4.5 + label * Math.PI + normal(next) * 0.12;
+    const progress = Math.floor(index / 2) / (pointsPerClass - 1);
+    const radius = 0.08 + progress * 1.2;
+    const angle = 0.9 + (1 - progress) * Math.PI * 3 + label * Math.PI;
     return {
-      x: (radius * Math.cos(angle) + normal(next) * 0.025) * 4.5,
-      y: (radius * Math.sin(angle) + normal(next) * 0.025) * 4.5,
+      x: (radius * Math.cos(angle) + normal(next) * 0.018) * 4.5,
+      y: (radius * Math.sin(angle) + normal(next) * 0.018) * 4.5,
       label,
     };
   });

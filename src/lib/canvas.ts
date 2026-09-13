@@ -7,6 +7,8 @@ type Size = {
 
 type Rgb = [number, number, number];
 
+const CLASSIFICATION_BOUNDARY_WIDTH = 0.08;
+
 export type FieldColorScale = (value: number) => Rgb;
 
 function colorFromToken(token: string): Rgb {
@@ -21,12 +23,28 @@ function colorFromToken(token: string): Rgb {
 export function classificationColorScale(): FieldColorScale {
   const classA = colorFromToken("--classification-a");
   const classB = colorFromToken("--classification-b");
+  const boundary: Rgb = [242, 242, 242];
+  const boundaryStart = 0.5 - CLASSIFICATION_BOUNDARY_WIDTH / 2;
+  const boundaryEnd = 0.5 + CLASSIFICATION_BOUNDARY_WIDTH / 2;
 
-  return (value) => [
-    Math.round(classA[0] + (classB[0] - classA[0]) * value),
-    Math.round(classA[1] + (classB[1] - classA[1]) * value),
-    Math.round(classA[2] + (classB[2] - classA[2]) * value),
-  ];
+  return (value) => {
+    const normalized = Math.min(1, Math.max(0, value));
+
+    if (normalized >= boundaryStart && normalized <= boundaryEnd) {
+      return boundary;
+    }
+
+    const [from, to, progress] =
+      normalized < boundaryStart
+        ? [classA, boundary, normalized / boundaryStart]
+        : [boundary, classB, (normalized - boundaryEnd) / (1 - boundaryEnd)];
+
+    return [
+      Math.round(from[0] + (to[0] - from[0]) * progress),
+      Math.round(from[1] + (to[1] - from[1]) * progress),
+      Math.round(from[2] + (to[2] - from[2]) * progress),
+    ];
+  };
 }
 
 export function activationFieldDataUrl(field: ScalarField): string {

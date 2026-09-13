@@ -33,7 +33,7 @@ export const NetworkConfigDefaultValues = {
       neurons: 2,
     },
   ],
-  learningRate: 0.03,
+  learningRate: 0.003,
 } as NetworkConfigFormSchema;
 
 export const useNetworkConfigForm = () => {

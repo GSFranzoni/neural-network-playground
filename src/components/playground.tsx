@@ -119,7 +119,15 @@ export const Playground = () => {
                           <FormSelect.Group>
                             {datasets.map((dataset) => (
                               <FormSelect.Item key={dataset.value} value={dataset.value}>
-                                {dataset.label}
+                                <div className="flex items-center gap-2">
+                                  <img
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="size-6 rounded-md"
+                                    src={`/icons/${dataset.value}.png`}
+                                  />
+                                  {dataset.label}
+                                </div>
                               </FormSelect.Item>
                             ))}
                           </FormSelect.Group>
