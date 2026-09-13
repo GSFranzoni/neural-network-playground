@@ -146,7 +146,7 @@ export const Playground = () => {
                   )}
                 </form.AppField>
                 <Field>
-                  <FieldLabel>Layers</FieldLabel>
+                  <FieldLabel>Hidden Layers</FieldLabel>
                   <div className="flex items-center gap-0">
                     <Button
                       aria-label="Remove hidden layer"
@@ -276,6 +276,11 @@ export const Playground = () => {
         <section className="min-w-0">
           <NetworkGraph iteration={training.data.epoch}>
             <NetworkGraphLayer>
+              <NetworkGraphLayerSlot height={24}>
+                <div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
+                  <h3>Features</h3>
+                </div>
+              </NetworkGraphLayerSlot>
               {Array.from({ length: inputLayer.size }, (_, neuronIndex) => (
                 <NetworkGraphNeuron
                   key={neuronIndex}
@@ -286,7 +291,7 @@ export const Playground = () => {
             </NetworkGraphLayer>
             {hiddenLayers.map((layer, layerIndex) => (
               <NetworkGraphLayer key={layerIndex}>
-                <NetworkGraphLayerSlot height={48}>
+                <NetworkGraphLayerSlot height={40}>
                   <div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
                     <form.AppField name={`hiddenLayers[${layerIndex}].neurons`}>
                       {(field) => <field.FormStepper min={1} max={8} size="icon-xs" />}
@@ -303,6 +308,11 @@ export const Playground = () => {
               </NetworkGraphLayer>
             ))}
             <NetworkGraphLayer>
+              <NetworkGraphLayerSlot height={24}>
+                <div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
+                  <h3>Output</h3>
+                </div>
+              </NetworkGraphLayerSlot>
               <NetworkGraphNeuron id="output" size={{ width: 280, height: 280 }}>
                 <ClassificationPlot
                   bounds={bounds}
