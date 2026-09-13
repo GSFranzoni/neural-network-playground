@@ -89,19 +89,21 @@ function sampleActivationFields(
 
 type Props = {
   bounds: Bounds;
-  formValues: NetworkConfigFormSchema;
+  config: NetworkConfigFormSchema;
 };
 
-export function useNetworkVisualization({ bounds, formValues }: Props) {
-  const hiddenLayerSignature = formValues.hiddenLayers.map((layer) => layer.neurons).join(",");
-
+export function useNetworkVisualization({ bounds, config }: Props) {
   const { network, inputLayer, hiddenLayers, outputLayer, neuronCount } = useMemo(() => {
     const inputLayer = new InputLayer(2);
-    const hiddenLayerSizes = hiddenLayerSignature.split(",").map(Number);
-    const hiddenLayers = hiddenLayerSizes.map(
-      (neurons, index) =>
-        new DenseLayer(index === 0 ? inputLayer.size : hiddenLayerSizes[index - 1], neurons),
+
+    const hiddenLayers = config.hiddenLayers.map(
+      ({ neurons }, index) =>
+        new DenseLayer(
+          index === 0 ? inputLayer.size : config.hiddenLayers[index - 1].neurons,
+          neurons,
+        ),
     );
+
     const outputLayer = new OutputLayer(hiddenLayers.at(-1)?.outputSize ?? inputLayer.size, 1);
 
     const neuronCount = [
@@ -112,7 +114,7 @@ export function useNetworkVisualization({ bounds, formValues }: Props) {
 
     const network = new NeuralNetwork([
       inputLayer,
-      ...hiddenLayers.flatMap((layer) => [layer, activationLayer(formValues.activation)]),
+      ...hiddenLayers.flatMap((layer) => [layer, activationLayer(config.activation)]),
       outputLayer,
     ]);
 
@@ -123,15 +125,15 @@ export function useNetworkVisualization({ bounds, formValues }: Props) {
       outputLayer,
       neuronCount,
     };
-  }, [formValues.activation, hiddenLayerSignature]);
+  }, [config.activation, config.hiddenLayers]);
 
-  const { classification, activations } = useMemo(
-    () => ({
-      classification: sampleField(bounds, 160, (x, y) => classConfidence(network.forward([x, y]))),
-      activations: sampleActivationFields(bounds, network, neuronCount, 32),
-    }),
-    [bounds, network, neuronCount],
+  const dataset = datasets[config.dataset];
+
+  const classification = sampleField(bounds, 160, (x, y) =>
+    classConfidence(network.forward([x, y])),
   );
+
+  const activations = sampleActivationFields(bounds, network, neuronCount, 32);
 
   return {
     network,
@@ -140,6 +142,6 @@ export function useNetworkVisualization({ bounds, formValues }: Props) {
     inputLayer,
     hiddenLayers,
     outputLayer,
-    dataset: datasets[formValues.dataset],
+    dataset,
   };
 }

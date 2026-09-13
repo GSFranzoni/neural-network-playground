@@ -276,6 +276,19 @@ export function softmaxCrossEntropy(logits: Vector, target: number): LossResult 
   };
 }
 
+export function binaryCrossEntropy(logit: number, target: number): LossResult {
+  const probability = 1 / (1 + Math.exp(-logit));
+  const clampedProbability = Math.min(Math.max(probability, 1e-7), 1 - 1e-7);
+
+  return {
+    loss: -(
+      target * Math.log(clampedProbability) +
+      (1 - target) * Math.log(1 - clampedProbability)
+    ),
+    gradient: [probability - target],
+  };
+}
+
 export function argmax(values: Vector): number {
   let maxIndex = 0;
 
