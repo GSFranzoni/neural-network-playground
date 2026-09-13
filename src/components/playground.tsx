@@ -21,7 +21,7 @@ import {
 } from "@/components/network-graph";
 import { TrainingLossChart } from "@/components/training-loss-chart";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { useNetworkConfigForm } from "@/hooks/use-network-config-form";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
@@ -111,80 +111,8 @@ export const Playground = () => {
           Live visualization
         </div>
       </header>
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <Card className="pt-0">
-          <NetworkGraph iteration={training.data.epoch}>
-            <NetworkGraphLayer>
-              {Array.from({ length: inputLayer.size }, (_, neuronIndex) => (
-                <NetworkGraphNeuron
-                  key={neuronIndex}
-                  id={neuronId(0, neuronIndex)}
-                  field={fields[0][neuronIndex]}
-                />
-              ))}
-            </NetworkGraphLayer>
-            {hiddenLayers.map((layer, layerIndex) => (
-              <NetworkGraphLayer key={layerIndex}>
-                <NetworkGraphLayerSlot height={48}>
-                  <div className="text-muted-foreground flex h-full items-end justify-center gap-2 text-xs">
-                    <form.AppField name={`hiddenLayers[${layerIndex}].neurons`}>
-                      {(field) => <field.FormStepper min={1} max={8} size="icon-xs" />}
-                    </form.AppField>
-                  </div>
-                </NetworkGraphLayerSlot>
-                {Array.from({ length: layer.outputSize }, (_, neuronIndex) => (
-                  <NetworkGraphNeuron
-                    key={neuronIndex}
-                    id={neuronId(layerIndex + 1, neuronIndex)}
-                    field={fields[layerIndex + 1][neuronIndex]}
-                  />
-                ))}
-              </NetworkGraphLayer>
-            ))}
-            <NetworkGraphLayer>
-              <NetworkGraphNeuron id="output" size={{ width: 300, height: 300 }}>
-                <ClassificationPlot
-                  bounds={bounds}
-                  compact
-                  dataset={dataset}
-                  field={classification}
-                  className="rounded-3xl"
-                />
-              </NetworkGraphNeuron>
-            </NetworkGraphLayer>
-            {[...hiddenLayers, outputLayer].flatMap((layer, layerIndex) =>
-              layer.weights.flatMap((row, destinationIndex) =>
-                row.map((weight, sourceIndex) => {
-                  const from = neuronId(layerIndex, sourceIndex);
-                  const to =
-                    layerIndex === hiddenLayers.length
-                      ? "output"
-                      : neuronId(layerIndex + 1, destinationIndex);
-                  const id = `connection-${from}-${to}`;
-
-                  return (
-                    <NetworkGraphConnection key={id} id={id} from={from} to={to} weight={weight} />
-                  );
-                }),
-              ),
-            )}
-          </NetworkGraph>
-          <CardFooter className="text-muted-foreground gap-4 border-t text-xs">
-            <span className="flex items-center gap-1.5">
-              <span className="bg-network-negative size-2 rounded-full" />
-              Negative weight
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="bg-network-positive size-2 rounded-full" />
-              Positive weight
-            </span>
-          </CardFooter>
-        </Card>
-
+      <div className="grid items-start gap-6 xl:grid-cols-[18rem_minmax(0,1fr)]">
         <Card size="sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">Playground settings</CardTitle>
-          </CardHeader>
           <CardContent>
             <form onSubmit={(event) => event.preventDefault()}>
               <FieldGroup className="gap-5">
@@ -300,23 +228,21 @@ export const Playground = () => {
                 <RotateCcwIcon />
               </Button>
             </div>
-            <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs tabular-nums">
-              <span>
-                <strong>Epoch</strong> {training.data.epoch}
-              </span>
-              {training.data.metrics && (
-                <>
-                  <span>·</span>
-                  <span>
-                    <strong>Loss</strong> {training.data.metrics.loss.toFixed(3)}
-                  </span>
-                  <span>·</span>
-                  <span>
-                    <strong>Accuracy</strong> {(training.data.metrics.accuracy * 100).toFixed(0)}%
-                  </span>
-                </>
-              )}
-            </div>
+            {training.data.metrics && (
+              <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs tabular-nums">
+                <span>
+                  <strong>Epoch</strong> {training.data.epoch}
+                </span>
+                <span>·</span>
+                <span>
+                  <strong>Loss</strong> {training.data.metrics.loss.toFixed(3)}
+                </span>
+                <span>·</span>
+                <span>
+                  <strong>Accuracy</strong> {(training.data.metrics.accuracy * 100).toFixed(0)}%
+                </span>
+              </div>
+            )}
             {training.data.history.length > 1 && (
               <div className="w-full overflow-hidden rounded-b-2xl">
                 <TrainingLossChart data={training.data.history} />
@@ -324,6 +250,62 @@ export const Playground = () => {
             )}
           </CardFooter>
         </Card>
+        <NetworkGraph iteration={training.data.epoch}>
+          <NetworkGraphLayer>
+            {Array.from({ length: inputLayer.size }, (_, neuronIndex) => (
+              <NetworkGraphNeuron
+                key={neuronIndex}
+                id={neuronId(0, neuronIndex)}
+                field={fields[0][neuronIndex]}
+              />
+            ))}
+          </NetworkGraphLayer>
+          {hiddenLayers.map((layer, layerIndex) => (
+            <NetworkGraphLayer key={layerIndex}>
+              <NetworkGraphLayerSlot height={48}>
+                <div className="text-muted-foreground flex h-full items-center justify-center gap-2 text-xs">
+                  <form.AppField name={`hiddenLayers[${layerIndex}].neurons`}>
+                    {(field) => <field.FormStepper min={1} max={8} size="icon-xs" />}
+                  </form.AppField>
+                </div>
+              </NetworkGraphLayerSlot>
+              {Array.from({ length: layer.outputSize }, (_, neuronIndex) => (
+                <NetworkGraphNeuron
+                  key={neuronIndex}
+                  id={neuronId(layerIndex + 1, neuronIndex)}
+                  field={fields[layerIndex + 1][neuronIndex]}
+                />
+              ))}
+            </NetworkGraphLayer>
+          ))}
+          <NetworkGraphLayer>
+            <NetworkGraphNeuron id="output" size={{ width: 280, height: 280 }}>
+              <ClassificationPlot
+                bounds={bounds}
+                compact
+                dataset={dataset}
+                field={classification}
+                className="rounded-3xl"
+              />
+            </NetworkGraphNeuron>
+          </NetworkGraphLayer>
+          {[...hiddenLayers, outputLayer].flatMap((layer, layerIndex) =>
+            layer.weights.flatMap((row, destinationIndex) =>
+              row.map((weight, sourceIndex) => {
+                const from = neuronId(layerIndex, sourceIndex);
+                const to =
+                  layerIndex === hiddenLayers.length
+                    ? "output"
+                    : neuronId(layerIndex + 1, destinationIndex);
+                const id = `connection-${from}-${to}`;
+
+                return (
+                  <NetworkGraphConnection key={id} id={id} from={from} to={to} weight={weight} />
+                );
+              }),
+            ),
+          )}
+        </NetworkGraph>
       </div>
     </div>
   );

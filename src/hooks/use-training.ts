@@ -26,9 +26,12 @@ type Props = {
   network: NeuralNetwork;
 };
 
-const BATCH_EPOCHS = 5;
-const UPDATE_INTERVAL_MS = 120;
+const BATCH_EPOCHS = 1;
+
+const UPDATE_INTERVAL_MS = 10;
+
 const MAX_HISTORY_POINTS = 60;
+
 const initialTrainingState: TrainingState = { epoch: 0, history: [], metrics: null };
 
 function trainNetwork(

@@ -66,7 +66,7 @@ export const ClassificationPlot: React.FC<Props> = ({
               key={`${point.x}-${point.y}-${index}`}
               cx={toScreenX(point.x)}
               cy={toScreenY(point.y)}
-              r="4"
+              r="3"
               fill={
                 point.label === ClassLabel.A ? "var(--classification-a)" : "var(--classification-b)"
               }
