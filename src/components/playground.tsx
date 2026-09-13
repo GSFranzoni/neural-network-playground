@@ -1,11 +1,18 @@
+import { useState } from "react";
+
 import { ClassificationPlot } from "@/components/classification-plot";
 import {
   NetworkGraph,
   NetworkGraphConnection,
   NetworkGraphLayer,
+  NetworkGraphLayerSlot,
   NetworkGraphNeuron,
 } from "@/components/network-graph";
-import { useNetworkConfigForm } from "@/hooks/use-network-config-form";
+import {
+  NetworkConfigFormSchema,
+  NetworkConfigFormValues,
+  useNetworkConfigForm,
+} from "@/hooks/use-network-config-form";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
 import type { Bounds } from "@/types/app";
 
@@ -21,10 +28,14 @@ function neuronId(layer: number, neuron: number): string {
 }
 
 export const Playground = () => {
-  const { form } = useNetworkConfigForm();
+  const [formValues, setFormValues] = useState<NetworkConfigFormSchema>(NetworkConfigFormValues);
+
+  const { form } = useNetworkConfigForm({
+    onChange: setFormValues,
+  });
 
   const { classification, activations, dataset, hiddenLayers, inputLayer, outputLayer } =
-    useNetworkVisualization({ bounds, formValues: form.state.values });
+    useNetworkVisualization({ bounds, formValues });
 
   return (
     <>
@@ -42,6 +53,13 @@ export const Playground = () => {
           </NetworkGraphLayer>
           {hiddenLayers.map((layer, layerIndex) => (
             <NetworkGraphLayer key={layerIndex}>
+              <NetworkGraphLayerSlot height={48}>
+                <div className="flex h-12 items-end justify-center">
+                  <form.AppField name={`hiddenLayers[${layerIndex}].neurons`}>
+                    {(field) => <field.FormStepper min={1} max={8} />}
+                  </form.AppField>
+                </div>
+              </NetworkGraphLayerSlot>
               {Array.from({ length: layer.outputSize }, (_, neuronIndex) => (
                 <NetworkGraphNeuron
                   key={neuronIndex}

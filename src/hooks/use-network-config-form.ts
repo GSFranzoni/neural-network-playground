@@ -22,22 +22,33 @@ export const NetworkConfigFormSchema = z.object({
 
 export type NetworkConfigFormSchema = z.infer<typeof NetworkConfigFormSchema>;
 
-export const useNetworkConfigForm = () => {
+export const NetworkConfigFormValues = {
+  activation: "linear",
+  dataset: "circle",
+  hiddenLayers: [
+    {
+      neurons: 8,
+    },
+    {
+      neurons: 8,
+    },
+  ],
+  learningRate: 0.01,
+} as NetworkConfigFormSchema;
+
+type Props = {
+  onChange: (values: NetworkConfigFormSchema) => unknown;
+};
+
+export const useNetworkConfigForm = ({ onChange }: Props) => {
   const form = useAppForm({
     validators: { onChange: NetworkConfigFormSchema },
-    defaultValues: {
-      activation: "linear",
-      dataset: "circle",
-      hiddenLayers: [
-        {
-          neurons: 8,
-        },
-        {
-          neurons: 8,
-        },
-      ],
-      learningRate: 0.01,
-    } as NetworkConfigFormSchema,
+    defaultValues: NetworkConfigFormValues,
+    listeners: {
+      onChange: ({ formApi }) => {
+        onChange(formApi.state.values);
+      },
+    },
   });
 
   return {
