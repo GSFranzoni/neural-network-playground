@@ -74,8 +74,6 @@ function resizeCanvas(canvas: HTMLCanvasElement, size: Size): CanvasRenderingCon
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.round(size.width * dpr);
   canvas.height = Math.round(size.height * dpr);
-  canvas.style.width = `${size.width}px`;
-  canvas.style.height = `${size.height}px`;
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
   return context;
 }

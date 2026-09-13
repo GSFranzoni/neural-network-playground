@@ -1,11 +1,11 @@
-import type { ButtonProps } from "@base-ui/react/button";
 import { MinusIcon, PlusIcon } from "lucide-react";
+import type { ComponentProps } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useFieldContext } from "@/lib/form";
 import { cn } from "@/lib/utils";
 
-type FormStepperProps = ButtonProps & {
+type FormStepperProps = ComponentProps<typeof Button> & {
   className?: string;
   disabled?: boolean;
   max?: number;
@@ -42,7 +42,7 @@ export function FormStepper({
       >
         <MinusIcon />
       </Button>
-      <output aria-live="polite" className="min-w-4 text-center text-sm tabular-nums">
+      <output aria-live="polite" className="min-w-4 text-center text-xs tabular-nums">
         {value}
       </output>
       <Button

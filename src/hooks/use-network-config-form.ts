@@ -39,19 +39,10 @@ export const NetworkConfigDefaultValues = {
   learningRate: 0.01,
 } as NetworkConfigFormSchema;
 
-type Props = {
-  onChange: (values: NetworkConfigFormSchema) => unknown;
-};
-
-export const useNetworkConfigForm = ({ onChange }: Props) => {
+export const useNetworkConfigForm = () => {
   const form = useAppForm({
     validators: { onChange: NetworkConfigFormSchema },
     defaultValues: NetworkConfigDefaultValues,
-    listeners: {
-      onChange: ({ formApi }) => {
-        onChange(formApi.state.values);
-      },
-    },
   });
 
   return {

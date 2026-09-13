@@ -49,7 +49,11 @@ export const ClassificationPlot: React.FC<Props> = ({
         className,
       )}
     >
-      <canvas ref={canvasRef} className="absolute inset-0" aria-label="Network decision surface" />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 block h-full w-full"
+        aria-label="Network decision surface"
+      />
       <svg
         className="absolute inset-0 h-full w-full"
         viewBox={`0 0 ${size.width} ${size.height}`}
