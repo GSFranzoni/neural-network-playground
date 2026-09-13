@@ -1,14 +1,19 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
+import { type NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
 import { sampleField } from "@/lib/field";
 import {
   DenseLayer,
   InputLayer,
+  LinearLayer,
   NeuralNetwork,
   OutputLayer,
   ReLULayer,
+  SigmoidLayer,
+  TanhLayer,
   type Layer,
 } from "@/lib/neural-network";
+import { datasets } from "@/mocks/dataset";
 import type { Bounds } from "@/types/app";
 
 function activationsFor(network: NeuralNetwork, input: [number, number]): number[][] {
@@ -33,60 +38,91 @@ function classConfidence(output: number[]): number {
   }
 
   const largest = Math.max(...output);
+
   const probabilities = output.map((value) => Math.exp(value - largest));
+
   return probabilities[1] / probabilities.reduce((sum, value) => sum + value, 0);
+}
+
+function activationLayer(activation: NetworkConfigFormSchema["activation"]): Layer {
+  switch (activation) {
+    case "relu":
+      return new ReLULayer();
+    case "sigmoid":
+      return new SigmoidLayer();
+    case "tanh":
+      return new TanhLayer();
+    case "linear":
+      return new LinearLayer();
+  }
 }
 
 type Props = {
   bounds: Bounds;
+  formValues: NetworkConfigFormSchema;
 };
 
-export function useNetworkVisualization({ bounds }: Props) {
-  const [inputLayer] = useState(() => new InputLayer(2));
+export function useNetworkVisualization({ bounds, formValues }: Props) {
+  const { network, inputLayer, hiddenLayers, outputLayer, neuronCount } = useMemo(() => {
+    const inputLayer = new InputLayer(2);
 
-  const [hiddenLayers, setHiddenLayers] = useState(() => [
-    new DenseLayer(inputLayer.size, 8),
-    new DenseLayer(8, 8),
-  ]);
+    const outputLayer = new OutputLayer(
+      inputLayer.size,
+      formValues.hiddenLayers.at(-1)?.neurons ?? 1,
+    );
 
-  const [outputLayer] = useState(() => new OutputLayer(8, 1));
+    const hiddenLayers = formValues.hiddenLayers.map(
+      ({ neurons }, index) =>
+        new DenseLayer(
+          index === 0 ? inputLayer.size : Number(formValues.hiddenLayers[index - 1].neurons),
+          neurons,
+        ),
+    );
 
-  const layers = useMemo(
-    () =>
-      [
-        inputLayer,
-        ...hiddenLayers.flatMap((layer) => [layer, new ReLULayer()]),
-        outputLayer,
-      ] as Layer[],
-    [hiddenLayers, inputLayer, outputLayer],
-  );
+    const neuronCount = [
+      inputLayer.size,
+      ...hiddenLayers.map((layer) => layer.outputSize),
+      outputLayer.outputSize,
+    ];
 
-  const network = useMemo(() => new NeuralNetwork(layers), [layers]);
+    const network = new NeuralNetwork([
+      inputLayer,
+      ...hiddenLayers.flatMap((layer) => [layer, activationLayer(formValues.activation)]),
+      outputLayer,
+    ]);
 
-  const neuronCount = [
-    inputLayer.size,
-    ...hiddenLayers.map((layer) => layer.outputSize),
-    outputLayer.outputSize,
-  ];
+    return {
+      network,
+      inputLayer,
+      hiddenLayers,
+      outputLayer,
+      neuronCount,
+    };
+  }, [formValues]);
 
-  const classification = sampleField(bounds, 160, (x, y) =>
-    classConfidence(network.forward([x, y])),
-  );
-
-  const activations = neuronCount.map((count, layerIndex) =>
-    Array.from({ length: count }, (_, neuronIndex) =>
-      sampleField(bounds, 32, (x, y) => activationsFor(network, [x, y])[layerIndex][neuronIndex]),
-    ),
+  const { classification, activations } = useMemo(
+    () => ({
+      classification: sampleField(bounds, 160, (x, y) => classConfidence(network.forward([x, y]))),
+      activations: neuronCount.map((count, layerIndex) =>
+        Array.from({ length: count }, (_, neuronIndex) =>
+          sampleField(
+            bounds,
+            32,
+            (x, y) => activationsFor(network, [x, y])[layerIndex][neuronIndex],
+          ),
+        ),
+      ),
+    }),
+    [bounds, network, neuronCount],
   );
 
   return {
     network,
     classification,
     activations,
-    neuronCount,
     inputLayer,
     hiddenLayers,
     outputLayer,
-    setHiddenLayers,
+    dataset: datasets[formValues.dataset],
   };
 }

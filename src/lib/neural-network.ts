@@ -35,6 +35,20 @@ export class InputLayer implements Layer {
   }
 }
 
+export class LinearLayer implements Layer {
+  forward(input: Vector): Vector {
+    return input;
+  }
+
+  backward(gradient: Vector): Vector {
+    return gradient;
+  }
+
+  parameters(): Parameter[] {
+    return [];
+  }
+}
+
 export class ReLULayer implements Layer {
   private input: Vector = [];
 
@@ -46,6 +60,40 @@ export class ReLULayer implements Layer {
 
   backward(gradient: Vector): Vector {
     return gradient.map((value, i) => (this.input[i] > 0 ? value : 0));
+  }
+
+  parameters(): Parameter[] {
+    return [];
+  }
+}
+
+export class TanhLayer implements Layer {
+  private output: Vector = [];
+
+  forward(input: Vector): Vector {
+    this.output = input.map(Math.tanh);
+    return this.output;
+  }
+
+  backward(gradient: Vector): Vector {
+    return gradient.map((value, index) => value * (1 - this.output[index] ** 2));
+  }
+
+  parameters(): Parameter[] {
+    return [];
+  }
+}
+
+export class SigmoidLayer implements Layer {
+  private output: Vector = [];
+
+  forward(input: Vector): Vector {
+    this.output = input.map((value) => 1 / (1 + Math.exp(-value)));
+    return this.output;
+  }
+
+  backward(gradient: Vector): Vector {
+    return gradient.map((value, index) => value * this.output[index] * (1 - this.output[index]));
   }
 
   parameters(): Parameter[] {

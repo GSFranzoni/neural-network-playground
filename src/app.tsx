@@ -5,8 +5,8 @@ import {
   NetworkGraphLayer,
   NetworkGraphNeuron,
 } from "@/components/network-graph";
+import { useNetworkConfigForm } from "@/hooks/use-network-config-form";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
-import { datasets } from "@/mocks/dataset";
 import type { Bounds } from "@/types/app";
 
 const bounds: Bounds = {
@@ -21,8 +21,10 @@ function neuronId(layer: number, neuron: number): string {
 }
 
 export function App() {
-  const { classification, activations, hiddenLayers, inputLayer, outputLayer } =
-    useNetworkVisualization({ bounds });
+  const { form } = useNetworkConfigForm();
+
+  const { classification, activations, dataset, hiddenLayers, inputLayer, outputLayer } =
+    useNetworkVisualization({ bounds, formValues: form.state.values });
 
   return (
     <main className="mx-auto w-full max-w-5xl p-6">
@@ -54,7 +56,7 @@ export function App() {
               <ClassificationPlot
                 bounds={bounds}
                 compact
-                dataset={datasets.circle}
+                dataset={dataset}
                 field={classification}
               />
             </NetworkGraphNeuron>
