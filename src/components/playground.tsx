@@ -136,6 +136,19 @@ export const Playground = () => {
                     </Field>
                   )}
                 </form.AppField>
+                <form.AppField name="noise">
+                  {() => (
+                    <Field>
+                      <div className="flex items-center justify-between gap-3">
+                        <FieldLabel>Noise</FieldLabel>
+                        <output className="text-muted-foreground text-xs tabular-nums">
+                          {config.noise}%
+                        </output>
+                      </div>
+                      <FormSlider aria-label="Noise" max={100} min={0} step={1} />
+                    </Field>
+                  )}
+                </form.AppField>
                 <Field>
                   <FieldLabel>Layers</FieldLabel>
                   <div className="flex items-center gap-0">

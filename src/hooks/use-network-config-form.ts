@@ -10,6 +10,7 @@ export const NetworkConfigFormSchema = z.object({
   activation: ActivationSchema,
   dataset: DatasetSchema,
   learningRate: z.number().positive(),
+  noise: z.number().min(0).max(100),
   hiddenLayers: z
     .array(
       z.object({
@@ -34,6 +35,7 @@ export const NetworkConfigDefaultValues = {
     },
   ],
   learningRate: 0.003,
+  noise: 0,
 } as NetworkConfigFormSchema;
 
 export const useNetworkConfigForm = () => {

@@ -98,3 +98,26 @@ export const datasets: Record<string, Dataset> = {
   twoMoons: twoMoons(),
   spiral: spiral(),
 };
+
+export function datasetsWithNoise(noisePercent: number): Record<string, Dataset> {
+  if (noisePercent <= 0) {
+    return datasets;
+  }
+
+  const amount = (noisePercent / 100) * 0.8;
+
+  return Object.fromEntries(
+    Object.entries(datasets).map(([name, dataset], datasetIndex) => [
+      name,
+      dataset.map((point, pointIndex) => {
+        const next = random(100 + datasetIndex * 1000 + pointIndex);
+
+        return {
+          ...point,
+          x: Math.max(-6, Math.min(6, point.x + normal(next) * amount)),
+          y: Math.max(-6, Math.min(6, point.y + normal(next) * amount)),
+        };
+      }),
+    ]),
+  );
+}
