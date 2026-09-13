@@ -89,7 +89,7 @@ export const ClassificationPlot: React.FC<Props> = ({
                 point.label === ClassLabel.A ? "var(--classification-a)" : "var(--classification-b)"
               }
               stroke="var(--background)"
-              strokeWidth="1.5"
+              strokeWidth="1"
             />
           ))}
         </g>

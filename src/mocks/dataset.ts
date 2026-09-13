@@ -17,10 +17,10 @@ function normal(next: () => number): number {
 
 function circle(): Dataset {
   const next = random(1);
-  return Array.from({ length: 240 }, () => {
+  return Array.from({ length: 320 }, () => {
     const angle = next() * Math.PI * 2;
     const label = next() > 0.5 ? ClassLabel.B : ClassLabel.A;
-    const radius = label === ClassLabel.A ? Math.sqrt(next()) * 0.55 : 0.8 + next() * 0.45;
+    const radius = label === ClassLabel.A ? Math.sqrt(next()) * 0.6 : 0.8 + next() * 0.45;
     return {
       x: Math.cos(angle) * radius * DATASET_SCALE,
       y: Math.sin(angle) * radius * DATASET_SCALE,
@@ -32,8 +32,8 @@ function circle(): Dataset {
 function exclusiveOr(): Dataset {
   const next = random(2);
   return Array.from({ length: 240 }, () => {
-    const x = (next() * 2 - 1) * DATASET_SCALE;
-    const y = (next() * 2 - 1) * DATASET_SCALE;
+    const x = (next() < 0.5 ? -1 : 1) * (0.075 + next() * 0.82) * DATASET_SCALE;
+    const y = (next() < 0.5 ? -1 : 1) * (0.075 + next() * 0.82) * DATASET_SCALE;
     return {
       x,
       y,
@@ -44,11 +44,11 @@ function exclusiveOr(): Dataset {
 
 function gaussian(): Dataset {
   const next = random(3);
-  return Array.from({ length: 240 }, (_, index) => {
+  return Array.from({ length: 320 }, (_, index) => {
     const label = index % 2 === 0 ? ClassLabel.A : ClassLabel.B;
     return {
-      x: ((label ? 0.65 : -0.65) + normal(next) * 0.27) * DATASET_SCALE,
-      y: ((label ? 0.55 : -0.55) + normal(next) * 0.27) * DATASET_SCALE,
+      x: ((label ? 0.5 : -0.4) + normal(next) * 0.2) * DATASET_SCALE,
+      y: ((label ? 0.5 : -0.4) + normal(next) * 0.2) * DATASET_SCALE,
       label,
     };
   });
@@ -91,33 +91,28 @@ function spiral(): Dataset {
   });
 }
 
-export const datasets: Record<string, Dataset> = {
-  circle: circle(),
-  exclusiveOr: exclusiveOr(),
-  gaussian: gaussian(),
-  twoMoons: twoMoons(),
-  spiral: spiral(),
-};
+export const datasets = (noise: number) => ({
+  circle: addNoise(circle(), noise),
+  exclusiveOr: addNoise(exclusiveOr(), noise),
+  gaussian: addNoise(gaussian(), noise),
+  twoMoons: addNoise(twoMoons(), noise),
+  spiral: addNoise(spiral(), noise),
+});
 
-export function datasetsWithNoise(noisePercent: number): Record<string, Dataset> {
-  if (noisePercent <= 0) {
-    return datasets;
+function addNoise(dataset: Dataset, noise: number) {
+  if (noise <= 0) {
+    return dataset;
   }
 
-  const amount = (noisePercent / 100) * 0.8;
+  const amount = noise / 100;
 
-  return Object.fromEntries(
-    Object.entries(datasets).map(([name, dataset], datasetIndex) => [
-      name,
-      dataset.map((point, pointIndex) => {
-        const next = random(100 + datasetIndex * 1000 + pointIndex);
+  return dataset.map((point, pointIndex) => {
+    const next = random(100 + 1000 + pointIndex);
 
-        return {
-          ...point,
-          x: Math.max(-6, Math.min(6, point.x + normal(next) * amount)),
-          y: Math.max(-6, Math.min(6, point.y + normal(next) * amount)),
-        };
-      }),
-    ]),
-  );
+    return {
+      ...point,
+      x: Math.max(-6, Math.min(6, point.x + normal(next) * amount)),
+      y: Math.max(-6, Math.min(6, point.y + normal(next) * amount)),
+    };
+  });
 }

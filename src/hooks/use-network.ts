@@ -13,7 +13,7 @@ import {
   TanhLayer,
   type Layer,
 } from "@/lib/neural-network";
-import { datasetsWithNoise } from "@/mocks/dataset";
+import { datasets } from "@/mocks/dataset";
 
 function activationLayer(activation: NetworkConfigFormSchema["activation"]): Layer {
   switch (activation) {
@@ -53,7 +53,7 @@ const createNetwork = (config: NetworkConfigFormSchema) => {
     outputLayer,
   ]);
 
-  const dataset = datasetsWithNoise(config.noise)[config.dataset];
+  const dataset = datasets(config.noise)[config.dataset];
 
   return { network, inputLayer, hiddenLayers, outputLayer, neuronCount, config, dataset };
 };
