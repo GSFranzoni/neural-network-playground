@@ -199,16 +199,9 @@ export class SGD implements Optimizer {
 }
 
 export function randomWeights(inputSize: number, outputSize: number): Matrix {
-  const standardDeviation = Math.sqrt(2 / inputSize);
-
   return Array.from({ length: outputSize }, () =>
-    Array.from({ length: inputSize }, () => randomNormal() * standardDeviation),
+    Array.from({ length: inputSize }, () => Math.random() - 0.5),
   );
-}
-
-function randomNormal(): number {
-  const u = Math.max(Math.random(), Number.MIN_VALUE);
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
 }
 
 const WeightsSchema = z.array(z.array(z.number()));
