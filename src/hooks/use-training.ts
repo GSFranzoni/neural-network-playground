@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useAnimationFrameInterval } from "@/hooks/use-animation-frame-interval";
 import { useNetworkConfigChange } from "@/hooks/use-network-config-change";
@@ -6,7 +6,7 @@ import type { NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
 import { shuffled } from "@/lib/arrays";
 import { encodeCoordinates } from "@/lib/features";
 import { binaryCrossEntropy, NeuralNetwork, SGD } from "@/lib/neural-network";
-import type { Dataset } from "@/types/app";
+import { type Dataset } from "@/types/app";
 
 export type TrainingMetrics = {
   accuracy: number;
@@ -31,6 +31,8 @@ type Props = {
 
 const BATCH_EPOCHS = 1;
 
+const MINI_BATCH_SIZE = 10;
+
 const UPDATE_INTERVAL_MS = 20;
 
 const MAX_HISTORY_POINTS = 60;
@@ -48,23 +50,49 @@ function trainNetwork(
   epochs: number,
 ): TrainingMetrics {
   const optimizer = new SGD(config.learningRate);
-  let totalLoss = 0;
-  let correct = 0;
+
+  const parameters = network.parameters();
+
+  const accumulatedGradients = parameters.map(({ values }) => Array(values.length).fill(0));
+
+  let batchSize = 0;
+
+  const updateWeights = () => {
+    optimizer.step(parameters, accumulatedGradients, batchSize);
+    accumulatedGradients.forEach((gradients) => gradients.fill(0));
+    batchSize = 0;
+  };
 
   for (let epoch = 0; epoch < epochs; epoch++) {
     for (const sample of dataset) {
       const [logit] = network.forward(encodeCoordinates(sample.x, sample.y, config.features));
       const result = binaryCrossEntropy(logit, sample.label);
-      totalLoss += result.loss;
-      correct += Number((logit >= 0 ? 1 : 0) === sample.label);
       network.backward(result.gradient);
-      optimizer.step(network.parameters());
+
+      parameters.forEach(({ gradients }, parameterIndex) => {
+        gradients.forEach((gradient, gradientIndex) => {
+          accumulatedGradients[parameterIndex][gradientIndex] += gradient;
+        });
+      });
+
+      batchSize++;
+      if (batchSize === MINI_BATCH_SIZE) {
+        updateWeights();
+      }
     }
   }
 
-  const samples = dataset.length * epochs;
+  let totalLoss = 0;
+  let correct = 0;
 
-  return { loss: totalLoss / samples, accuracy: correct / samples };
+  for (const sample of dataset) {
+    const [logit] = network.forward(encodeCoordinates(sample.x, sample.y, config.features));
+    const result = binaryCrossEntropy(logit, sample.label);
+    totalLoss += result.loss;
+    correct += Number((logit >= 0 ? 1 : 0) === sample.label);
+  }
+
+  return { loss: totalLoss / dataset.length, accuracy: correct / dataset.length };
 }
 
 export function useTraining({ config, dataset, network }: Props) {
@@ -72,7 +100,7 @@ export function useTraining({ config, dataset, network }: Props) {
 
   const [data, setData] = useState<TrainingState>(initialTrainingState);
 
-  const trainingDataset = shuffled(dataset);
+  const trainingDataset = useMemo(() => shuffled(dataset), [dataset]);
 
   const train = (epochs: number) => trainNetwork(network, trainingDataset, config, epochs);
 
