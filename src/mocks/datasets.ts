@@ -1,3 +1,4 @@
+import { bounds } from "@/lib/bounds";
 import { ClassLabel, type Dataset } from "@/types/app";
 
 const DATASET_SCALE = 4;
@@ -111,8 +112,8 @@ function addNoise(dataset: Dataset, noise: number) {
 
     return {
       ...point,
-      x: Math.max(-6, Math.min(6, point.x + normal(next) * amount)),
-      y: Math.max(-6, Math.min(6, point.y + normal(next) * amount)),
+      x: Math.max(bounds.minX, Math.min(bounds.maxX, point.x + normal(next) * amount)),
+      y: Math.max(bounds.minY, Math.min(bounds.maxY, point.y + normal(next) * amount)),
     };
   });
 }

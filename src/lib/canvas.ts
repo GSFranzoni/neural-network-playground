@@ -59,8 +59,8 @@ export function activationFieldDataUrl(field: ScalarField): string {
     return "";
   }
 
-  const positive = colorFromToken("--network-positive");
-  const negative = colorFromToken("--network-negative");
+  const positive = colorFromToken("--classification-b");
+  const negative = colorFromToken("--classification-a");
   const maxMagnitude = Math.max(
     1e-6,
     ...field.values.flatMap((row) => row.map((value) => Math.abs(value))),

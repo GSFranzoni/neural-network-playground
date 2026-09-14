@@ -21,16 +21,9 @@ import { useNetwork } from "@/hooks/use-network";
 import { useNetworkConfigForm } from "@/hooks/use-network-config-form";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
 import { useTraining } from "@/hooks/use-training";
+import { bounds } from "@/lib/bounds";
 import { featureDefinitions, FeatureSchema, type Feature } from "@/lib/features";
 import { networkConfigSearchParams } from "@/lib/search-params";
-import type { Bounds } from "@/types/app";
-
-const bounds: Bounds = {
-  minX: -6,
-  maxX: 6,
-  minY: -6,
-  maxY: 6,
-};
 
 const datasets = [
   { label: "Circle", value: "circle" },
@@ -89,7 +82,6 @@ export const Playground = () => {
   });
 
   const { activations: fields, inputActivations } = useNetworkVisualization({
-    bounds,
     features: config.features,
     network,
     neuronCount,
@@ -119,7 +111,9 @@ export const Playground = () => {
             />
           </div>
           <div className="flex max-w-2xl flex-col gap-1.5">
-            <p className="text-muted-foreground text-sm font-medium">Interactive classification sandbox</p>
+            <p className="text-muted-foreground text-sm font-medium">
+              Interactive classification sandbox
+            </p>
             <h1 className="font-heading text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
               Neural Network Playground
             </h1>

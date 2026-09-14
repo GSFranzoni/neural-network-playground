@@ -1,15 +1,20 @@
 import z from "zod";
 
+import { coordinateScale } from "@/lib/bounds";
+
 type Coordinates = { x: number; y: number };
 
 export const featureDefinitions = {
-  x1: { label: "X₁", transform: ({ x }: Coordinates) => x },
-  x2: { label: "X₂", transform: ({ y }: Coordinates) => y },
-  x1Squared: { label: "X₁²", transform: ({ x }: Coordinates) => x ** 2 },
-  x2Squared: { label: "X₂²", transform: ({ y }: Coordinates) => y ** 2 },
-  x1x2: { label: "X₁ × X₂", transform: ({ x, y }: Coordinates) => x * y },
-  sinX1: { label: "sin(X₁)", transform: ({ x }: Coordinates) => Math.sin(x) },
-  sinX2: { label: "sin(X₂)", transform: ({ y }: Coordinates) => Math.sin(y) },
+  x1: { label: "X₁", transform: ({ x }: Coordinates) => x / coordinateScale },
+  x2: { label: "X₂", transform: ({ y }: Coordinates) => y / coordinateScale },
+  x1Squared: { label: "X₁²", transform: ({ x }: Coordinates) => (x / coordinateScale) ** 2 },
+  x2Squared: { label: "X₂²", transform: ({ y }: Coordinates) => (y / coordinateScale) ** 2 },
+  x1x2: {
+    label: "X₁ × X₂",
+    transform: ({ x, y }: Coordinates) => (x / coordinateScale) * (y / coordinateScale),
+  },
+  sinX1: { label: "sin(X₁)", transform: ({ x }: Coordinates) => Math.sin(x / coordinateScale) },
+  sinX2: { label: "sin(X₂)", transform: ({ y }: Coordinates) => Math.sin(y / coordinateScale) },
 } as const;
 
 export type Feature = keyof typeof featureDefinitions;

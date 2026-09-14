@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 
+import { bounds } from "@/lib/bounds";
 import { encodeCoordinates, featureDefinitions, FeatureSchema, type Feature } from "@/lib/features";
 import type { ScalarField } from "@/lib/field";
 import { DenseLayer, NeuralNetwork } from "@/lib/neural-network";
-import type { Bounds } from "@/types/app";
 
 function activationsFor(network: NeuralNetwork, input: number[]): number[][] {
   let values: number[] = input;
@@ -22,7 +22,6 @@ function activationsFor(network: NeuralNetwork, input: number[]): number[][] {
 }
 
 function sampleActivationFields(
-  bounds: Bounds,
   network: NeuralNetwork,
   features: Set<Feature>,
   neuronCount: number[],
@@ -63,7 +62,6 @@ function sampleActivationFields(
 }
 
 function sampleFeatureActivationFields(
-  bounds: Bounds,
   features: readonly Feature[],
   resolution: number,
 ): ScalarField[] {
@@ -84,26 +82,20 @@ function sampleFeatureActivationFields(
 }
 
 type VisualizationProps = {
-  bounds: Bounds;
   features: Set<Feature>;
   network: NeuralNetwork;
   neuronCount: number[];
 };
 
-export function useNetworkVisualization({
-  bounds,
-  features,
-  network,
-  neuronCount,
-}: VisualizationProps) {
+export function useNetworkVisualization({ features, network, neuronCount }: VisualizationProps) {
   const activations = useMemo(
-    () => sampleActivationFields(bounds, network, features, neuronCount, 32),
-    [bounds, features, network, neuronCount],
+    () => sampleActivationFields(network, features, neuronCount, 32),
+    [features, network, neuronCount],
   );
 
   const inputActivations = useMemo(
-    () => sampleFeatureActivationFields(bounds, FeatureSchema.options, 32),
-    [bounds],
+    () => sampleFeatureActivationFields(FeatureSchema.options, 32),
+    [],
   );
 
   return {
