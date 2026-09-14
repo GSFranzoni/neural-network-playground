@@ -219,7 +219,7 @@ export const Playground = () => {
                   <div className="flex items-center gap-0">
                     <Button
                       aria-label="Remove hidden layer"
-                      disabled={hiddenLayerCount <= 1}
+                      disabled={hiddenLayerCount <= 0}
                       onClick={removeHiddenLayer}
                       size="icon-xs"
                       type="button"

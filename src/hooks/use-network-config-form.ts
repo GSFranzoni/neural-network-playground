@@ -18,7 +18,7 @@ export const NetworkConfigFormSchema = z.object({
         neurons: z.number().int().min(1).max(8),
       }),
     )
-    .min(1)
+    .min(0)
     .max(6),
   features: z.set(FeatureSchema),
 });
@@ -52,10 +52,7 @@ export const useNetworkConfigForm = ({ defaultValues }: Props) => {
   });
 
   const addHiddenLayer = () => {
-    form.setFieldValue("hiddenLayers", (layers) => [
-      ...layers,
-      { neurons: layers.at(-1)?.neurons ?? 8 },
-    ]);
+    form.setFieldValue("hiddenLayers", (layers) => [...layers, { neurons: 2 }]);
   };
 
   const removeHiddenLayer = () => {

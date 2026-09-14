@@ -10,10 +10,12 @@ function activationsFor(network: NeuralNetwork, input: number[]): number[][] {
 
   const activations = [values];
 
-  for (const layer of network.layers) {
+  const layers = network.layers.slice(1);
+
+  for (const [index, layer] of layers.entries()) {
     values = layer.forward(values);
 
-    if (layer instanceof DenseLayer) {
+    if (!(layer instanceof DenseLayer) || index === layers.length - 1) {
       activations.push(values);
     }
   }
@@ -38,6 +40,7 @@ function sampleActivationFields(
 
     for (let column = 0; column < resolution; column++) {
       const x = bounds.minX + ((column + 0.5) / resolution) * (bounds.maxX - bounds.minX);
+
       const activations = activationsFor(network, encodeCoordinates(x, y, features));
 
       for (let layerIndex = 0; layerIndex < activations.length; layerIndex++) {
@@ -73,6 +76,7 @@ function sampleFeatureActivationFields(
 
       for (let column = 0; column < resolution; column++) {
         const x = bounds.minX + ((column + 0.5) / resolution) * (bounds.maxX - bounds.minX);
+
         values[row][column] = featureDefinitions[feature].transform({ x, y });
       }
     }
