@@ -8,22 +8,16 @@ import {
 import { FeatureSchema } from "@/lib/features";
 
 export const networkConfigSearchParams = {
-  activation: parseAsStringEnum(ActivationSchema.options)
-    .withDefault(NetworkConfigDefaultValues.activation)
-    .withOptions({ clearOnDefault: false }),
-  dataset: parseAsStringEnum(DatasetSchema.options)
-    .withDefault(NetworkConfigDefaultValues.dataset)
-    .withOptions({ clearOnDefault: false }),
-  features: parseAsArrayOf(parseAsStringEnum(FeatureSchema.options))
-    .withDefault(Array.from(NetworkConfigDefaultValues.features))
-    .withOptions({ clearOnDefault: false }),
-  hiddenLayers: parseAsArrayOf(parseAsInteger)
-    .withDefault(NetworkConfigDefaultValues.hiddenLayers.map(({ neurons }) => neurons))
-    .withOptions({ clearOnDefault: false }),
-  learningRate: parseAsFloat
-    .withDefault(NetworkConfigDefaultValues.learningRate)
-    .withOptions({ clearOnDefault: false }),
-  noise: parseAsInteger
-    .withDefault(NetworkConfigDefaultValues.noise)
-    .withOptions({ clearOnDefault: false }),
+  activation: parseAsStringEnum(ActivationSchema.options).withDefault(
+    NetworkConfigDefaultValues.activation,
+  ),
+  dataset: parseAsStringEnum(DatasetSchema.options).withDefault(NetworkConfigDefaultValues.dataset),
+  features: parseAsArrayOf(parseAsStringEnum(FeatureSchema.options)).withDefault(
+    Array.from(NetworkConfigDefaultValues.features),
+  ),
+  hiddenLayers: parseAsArrayOf(parseAsInteger).withDefault(
+    NetworkConfigDefaultValues.hiddenLayers.map(({ neurons }) => neurons),
+  ),
+  learningRate: parseAsFloat.withDefault(NetworkConfigDefaultValues.learningRate),
+  noise: parseAsInteger.withDefault(NetworkConfigDefaultValues.noise),
 };
