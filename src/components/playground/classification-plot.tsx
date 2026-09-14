@@ -19,6 +19,10 @@ type Props = {
   compact?: boolean;
 };
 
+const COMPACT_FIELD_RESOLUTION = 96;
+
+const FIELD_RESOLUTION = 160;
+
 export const ClassificationPlot: React.FC<Props> = ({
   bounds,
   className,
@@ -41,21 +45,25 @@ export const ClassificationPlot: React.FC<Props> = ({
       return;
     }
 
-    const field = sampleField(bounds, 160, (x, y) => {
-      const output = network.forward(encodeCoordinates(x, y, features));
+    const field = sampleField(
+      bounds,
+      compact ? COMPACT_FIELD_RESOLUTION : FIELD_RESOLUTION,
+      (x, y) => {
+        const output = network.forward(encodeCoordinates(x, y, features));
 
-      if (output.length === 1) {
-        return 1 / (1 + Math.exp(-output[0]));
-      }
+        if (output.length === 1) {
+          return 1 / (1 + Math.exp(-output[0]));
+        }
 
-      const largest = Math.max(...output);
-      const probabilities = output.map((value) => Math.exp(value - largest));
+        const largest = Math.max(...output);
+        const probabilities = output.map((value) => Math.exp(value - largest));
 
-      return probabilities[1] / probabilities.reduce((sum, value) => sum + value, 0);
-    });
+        return probabilities[1] / probabilities.reduce((sum, value) => sum + value, 0);
+      },
+    );
 
     drawField(canvas, field, colorScale, size);
-  }, [bounds, colorScale, features, network, revision, size]);
+  }, [bounds, colorScale, compact, features, network, revision, size]);
 
   const toScreenX = (x: number) => ((x - bounds.minX) / (bounds.maxX - bounds.minX)) * size.width;
 

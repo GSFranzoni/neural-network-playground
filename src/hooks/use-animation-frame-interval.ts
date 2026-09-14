@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 type Props = {
   enabled: boolean;
   intervalMs: number;
-  onTick: () => void;
+  onTick: (time: number, elapsed: number) => void;
 };
 
 export function useAnimationFrameInterval({ enabled, intervalMs, onTick }: Props) {
@@ -19,11 +19,13 @@ export function useAnimationFrameInterval({ enabled, intervalMs, onTick }: Props
     }
 
     let frame = 0;
-    let lastTick = 0;
+    let lastTick: number | null = null;
 
     const tick = (time: number) => {
-      if (time - lastTick >= intervalMs) {
-        onTickRef.current();
+      const elapsed = lastTick === null ? 0 : time - lastTick;
+
+      if (lastTick === null || elapsed >= intervalMs) {
+        onTickRef.current(time, elapsed);
         lastTick = time;
       }
 

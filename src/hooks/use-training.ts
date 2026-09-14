@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAnimationFrameInterval } from "@/hooks/use-animation-frame-interval";
 import { useNetworkConfigChange } from "@/hooks/use-network-config-change";
 import type { NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
+import { shuffled } from "@/lib/arrays";
 import { encodeCoordinates } from "@/lib/features";
 import { binaryCrossEntropy, NeuralNetwork, SGD } from "@/lib/neural-network";
 import type { Dataset } from "@/types/app";
@@ -71,7 +72,9 @@ export function useTraining({ config, dataset, network }: Props) {
 
   const [data, setData] = useState<TrainingState>(initialTrainingState);
 
-  const train = (epochs: number) => trainNetwork(network, dataset, config, epochs);
+  const trainingDataset = shuffled(dataset);
+
+  const train = (epochs: number) => trainNetwork(network, trainingDataset, config, epochs);
 
   const handleBatch = (metrics: TrainingMetrics, epochs: number) => {
     setData((current) => {

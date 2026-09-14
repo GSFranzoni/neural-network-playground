@@ -207,7 +207,7 @@ export const Playground = () => {
                       <div className="flex items-center justify-between gap-3">
                         <FieldLabel>Noise</FieldLabel>
                         <output className="text-muted-foreground text-xs tabular-nums">
-                          {config.noise}%
+                          {values.noise}%
                         </output>
                       </div>
                       <FormSlider aria-label="Noise" max={100} min={0} step={1} />
@@ -269,7 +269,7 @@ export const Playground = () => {
                       <div className="flex items-center justify-between gap-3">
                         <FieldLabel>Learning rate</FieldLabel>
                         <output className="text-muted-foreground text-xs tabular-nums">
-                          {config.learningRate.toFixed(4)}
+                          {values.learningRate.toFixed(4)}
                         </output>
                       </div>
                       <FormSlider aria-label="Learning rate" max={0.1} min={0.0001} step={0.0001} />
@@ -343,7 +343,11 @@ export const Playground = () => {
           )}
         </Card>
         <section className="min-w-0">
-          <NetworkGraph iteration={training.data.epoch}>
+          <NetworkGraph
+            iteration={training.data.epoch}
+            isRunning={training.running}
+            memoKey={network}
+          >
             <NetworkGraphLayer>
               <NetworkGraphLayerSlot height={24}>
                 <div className="text-muted-foreground flex h-full justify-center gap-2 text-xs">
