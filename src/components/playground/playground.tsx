@@ -1,12 +1,5 @@
 import { useSelector } from "@tanstack/react-form";
-import {
-  BrainCircuitIcon,
-  MinusIcon,
-  PauseIcon,
-  PlayIcon,
-  PlusIcon,
-  RotateCcwIcon,
-} from "lucide-react";
+import { MinusIcon, PauseIcon, PlayIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
 import { useQueryStates } from "nuqs";
 import { useDeferredValue, useEffect } from "react";
 
@@ -117,13 +110,18 @@ export const Playground = () => {
     <div className="flex flex-col gap-8 lg:gap-10">
       <header className="flex flex-col gap-5">
         <div className="flex items-start gap-4">
-          <div className="bg-primary text-primary-foreground shadow-primary/20 flex size-12 shrink-0 items-center justify-center rounded-[1.15rem] shadow-lg">
-            <BrainCircuitIcon />
+          <div className="shadow-primary/20 flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[1.15rem] shadow-lg">
+            <img
+              alt=""
+              aria-hidden="true"
+              className="size-full"
+              src={`${import.meta.env.BASE_URL}logos/neural-network.svg`}
+            />
           </div>
           <div className="flex max-w-2xl flex-col gap-1.5">
-            <p className="text-muted-foreground text-sm font-medium">Neural network sandbox</p>
+            <p className="text-muted-foreground text-sm font-medium">Interactive classification sandbox</p>
             <h1 className="font-heading text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
-              Classification lab
+              Neural Network Playground
             </h1>
             <p className="text-muted-foreground max-w-xl text-[0.95rem] leading-6">
               Explore how layer width and activation functions shape a decision surface.
