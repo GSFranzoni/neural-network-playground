@@ -10,17 +10,17 @@ import {
 import { useQueryStates } from "nuqs";
 import { useDeferredValue, useEffect } from "react";
 
-import { ClassificationPlot } from "@/components/classification-plot";
 import { FormSelect } from "@/components/form/form-select";
 import { FormSlider } from "@/components/form/form-slider";
+import { ClassificationPlot } from "@/components/playground/classification-plot";
 import {
   NetworkGraph,
   NetworkGraphConnection,
   NetworkGraphLayer,
   NetworkGraphLayerSlot,
   NetworkGraphNeuron,
-} from "@/components/network-graph";
-import { TrainingLossChart } from "@/components/training-loss-chart";
+} from "@/components/playground/network-graph";
+import { TrainingLossChart } from "@/components/playground/training-loss-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";

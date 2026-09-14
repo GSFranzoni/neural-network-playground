@@ -1,4 +1,4 @@
-import { Playground } from "@/components/playground";
+import { Playground } from "@/components/playground/playground";
 
 export function App() {
   return (
