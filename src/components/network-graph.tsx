@@ -259,7 +259,7 @@ function updateConnectionVisuals(
       connection.props.weight >= 0
         ? "var(--network-positive)"
         : "var(--network-negative)";
-    path.style.strokeDashoffset = `${-iteration / 3}`;
+    path.style.strokeDashoffset = `${-iteration / 2}`;
     path.style.strokeOpacity = `${0.4 + magnitude * 0.6}`;
     path.style.strokeWidth = `${1.25 + magnitude * 2.5}`;
   }

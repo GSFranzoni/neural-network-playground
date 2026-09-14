@@ -30,7 +30,7 @@ export const NetworkConfigDefaultValues = {
   dataset: "circle",
   hiddenLayers: [
     {
-      neurons: 8,
+      neurons: 4,
     },
     {
       neurons: 2,
@@ -38,13 +38,17 @@ export const NetworkConfigDefaultValues = {
   ],
   learningRate: 0.003,
   noise: 0,
-  features: new Set(),
+  features: new Set(["x1", "x2"]),
 } as NetworkConfigFormSchema;
 
-export const useNetworkConfigForm = () => {
+type Props = {
+  defaultValues: Partial<NetworkConfigFormSchema>;
+};
+
+export const useNetworkConfigForm = ({ defaultValues }: Props) => {
   const form = useAppForm({
     validators: { onChange: NetworkConfigFormSchema },
-    defaultValues: NetworkConfigDefaultValues,
+    defaultValues: { ...NetworkConfigDefaultValues, ...defaultValues },
   });
 
   const addHiddenLayer = () => {

@@ -7,7 +7,8 @@ import {
   PlusIcon,
   RotateCcwIcon,
 } from "lucide-react";
-import { useDeferredValue } from "react";
+import { useQueryStates } from "nuqs";
+import { useDeferredValue, useEffect } from "react";
 
 import { ClassificationPlot } from "@/components/classification-plot";
 import { FormSelect } from "@/components/form/form-select";
@@ -28,6 +29,7 @@ import { useNetworkConfigForm } from "@/hooks/use-network-config-form";
 import { useNetworkVisualization } from "@/hooks/use-network-visualization";
 import { useTraining } from "@/hooks/use-training";
 import { featureDefinitions, FeatureSchema, type Feature } from "@/lib/features";
+import { networkConfigSearchParams } from "@/lib/search-params";
 import type { Bounds } from "@/types/app";
 
 const bounds: Bounds = {
@@ -61,7 +63,20 @@ function featureNeuronId(feature: Feature): string {
 }
 
 export const Playground = () => {
-  const { form, addHiddenLayer, removeHiddenLayer, toggleFeature } = useNetworkConfigForm();
+  const [searchParams, setSearchParams] = useQueryStates(networkConfigSearchParams, {
+    history: "replace",
+  });
+
+  const { form, addHiddenLayer, removeHiddenLayer, toggleFeature } = useNetworkConfigForm({
+    defaultValues: {
+      activation: searchParams.activation,
+      dataset: searchParams.dataset,
+      features: new Set(searchParams.features) as Set<Feature>,
+      hiddenLayers: searchParams.hiddenLayers.map((neurons) => ({ neurons })),
+      learningRate: searchParams.learningRate,
+      noise: searchParams.noise,
+    },
+  });
 
   const { values } = useSelector(form.store, (state) => state);
 
@@ -86,6 +101,17 @@ export const Playground = () => {
     network,
     neuronCount,
   });
+
+  useEffect(() => {
+    setSearchParams({
+      activation: config.activation,
+      dataset: config.dataset,
+      features: Array.from(config.features),
+      hiddenLayers: config.hiddenLayers.map(({ neurons }) => neurons),
+      learningRate: config.learningRate,
+      noise: config.noise,
+    });
+  }, [config, setSearchParams]);
 
   return (
     <div className="flex flex-col gap-8 lg:gap-10">
