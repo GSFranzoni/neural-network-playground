@@ -1,5 +1,5 @@
 import { useSelector } from "@tanstack/react-form";
-import { MinusIcon, PauseIcon, PlayIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
+import { CoffeeIcon, MinusIcon, PauseIcon, PlayIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
 import { useQueryStates } from "nuqs";
 import { useDeferredValue, useEffect } from "react";
 
@@ -14,7 +14,7 @@ import {
   NetworkGraphNeuron,
 } from "@/components/playground/network-graph";
 import { TrainingLossChart } from "@/components/playground/training-loss-chart";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { useNetwork } from "@/hooks/use-network";
@@ -101,26 +101,41 @@ export const Playground = () => {
   return (
     <div className="flex flex-col gap-8 lg:gap-10">
       <header className="flex flex-col gap-5">
-        <div className="flex items-start gap-4">
-          <div className="shadow-primary/20 flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[1.15rem] shadow-lg">
-            <img
-              alt=""
-              aria-hidden="true"
-              className="size-full"
-              src={`${import.meta.env.BASE_URL}logos/neural-network.svg`}
-            />
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="shadow-primary/20 flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[1.15rem] shadow-lg">
+              <img
+                alt=""
+                aria-hidden="true"
+                className="size-full"
+                src={`${import.meta.env.BASE_URL}logos/neural-network.svg`}
+              />
+            </div>
+            <div className="flex max-w-2xl flex-col gap-1.5">
+              <p className="text-muted-foreground text-sm font-medium">
+                Interactive classification sandbox
+              </p>
+              <h1 className="font-heading text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
+                Neural Network Playground
+              </h1>
+              <p className="text-muted-foreground max-w-xl text-[0.95rem] leading-6">
+                Explore how layer width and activation functions shape a decision surface.
+              </p>
+            </div>
           </div>
-          <div className="flex max-w-2xl flex-col gap-1.5">
-            <p className="text-muted-foreground text-sm font-medium">
-              Interactive classification sandbox
-            </p>
-            <h1 className="font-heading text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
-              Neural Network Playground
-            </h1>
-            <p className="text-muted-foreground max-w-xl text-[0.95rem] leading-6">
-              Explore how layer width and activation functions shape a decision surface.
-            </p>
-          </div>
+          <a
+            className={buttonVariants({
+              className: "mt-1",
+              size: "sm",
+              variant: "secondary",
+            })}
+            href="https://buymeacoffee.com/gsfranzoni"
+            rel="noreferrer"
+            target="_blank"
+          >
+            <CoffeeIcon data-icon="inline-start" />
+            Buy me a coffee
+          </a>
         </div>
       </header>
       <div className="grid items-start gap-6 xl:grid-cols-[20rem_minmax(0,1fr)] xl:gap-8">
