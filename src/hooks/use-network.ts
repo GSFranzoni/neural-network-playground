@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { useNetworkConfigChange } from "@/hooks/use-network-config-change";
 import type { NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
@@ -28,7 +28,7 @@ function activationLayer(activation: NetworkConfigFormSchema["activation"]): Lay
   }
 }
 
-const createNetwork = (config: NetworkConfigFormSchema) => {
+const createNetwork = (config: NetworkConfigFormSchema, datasetSeed: number) => {
   const inputLayer = new InputLayer(config.features.size);
 
   const hiddenLayers = config.hiddenLayers.map(
@@ -53,7 +53,7 @@ const createNetwork = (config: NetworkConfigFormSchema) => {
     outputLayer,
   ]);
 
-  const dataset = datasets(config.noise)[config.dataset];
+  const dataset = datasets(config.noise, datasetSeed)[config.dataset];
 
   return { network, inputLayer, hiddenLayers, outputLayer, neuronCount, dataset };
 };
@@ -63,10 +63,17 @@ type Props = {
 };
 
 export function useNetwork({ config }: Props) {
-  const [networkState, setNetworkState] = useState(createNetwork(config));
+  const datasetSeed = useRef(0);
+
+  const [networkState, setNetworkState] = useState(() => createNetwork(config, 0));
 
   const recreateNetwork = () => {
-    setNetworkState(createNetwork(config));
+    setNetworkState(createNetwork(config, datasetSeed.current));
+  };
+
+  const regenerateDataset = () => {
+    datasetSeed.current += 1;
+    setNetworkState(createNetwork(config, datasetSeed.current));
   };
 
   useNetworkConfigChange({
@@ -76,6 +83,7 @@ export function useNetwork({ config }: Props) {
 
   return {
     ...networkState,
+    regenerateDataset,
     recreateNetwork,
   };
 }

@@ -1,5 +1,13 @@
 import { useSelector } from "@tanstack/react-form";
-import { CoffeeIcon, MinusIcon, PauseIcon, PlayIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
+import {
+  CoffeeIcon,
+  MinusIcon,
+  PauseIcon,
+  PlayIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  RotateCcwIcon,
+} from "lucide-react";
 import { useQueryStates } from "nuqs";
 import { useDeferredValue, useEffect } from "react";
 
@@ -68,9 +76,15 @@ export const Playground = () => {
 
   const config = useDeferredValue(values);
 
-  const { dataset, hiddenLayers, network, neuronCount, outputLayer, recreateNetwork } = useNetwork({
-    config,
-  });
+  const {
+    dataset,
+    hiddenLayers,
+    network,
+    neuronCount,
+    outputLayer,
+    recreateNetwork,
+    regenerateDataset,
+  } = useNetwork({ config });
 
   const hiddenLayerCount = config.hiddenLayers.length;
 
@@ -78,6 +92,7 @@ export const Playground = () => {
 
   const training = useTraining({
     config,
+    dataset,
     network,
   });
 
@@ -146,7 +161,21 @@ export const Playground = () => {
                 <form.AppField name="dataset">
                   {() => (
                     <Field>
-                      <FieldLabel>Dataset</FieldLabel>
+                      <div className="flex items-center gap-1">
+                        <FieldLabel>Dataset</FieldLabel>
+                        <Button
+                          aria-label="Regenerate dataset"
+                          onClick={() => {
+                            regenerateDataset();
+                            training.reset();
+                          }}
+                          size="icon-xs"
+                          type="button"
+                          variant="ghost"
+                        >
+                          <RefreshCwIcon />
+                        </Button>
+                      </div>
                       <FormSelect items={datasets}>
                         <FormSelect.Trigger className="w-full">
                           <FormSelect.Value placeholder="Select dataset" />
@@ -281,7 +310,7 @@ export const Playground = () => {
                 </Button>
               </div>
               <span className="text-muted-foreground text-xs font-medium">
-                {training.running ? "Treinando" : "Pausado"}
+                {training.running ? "Training" : "Paused"}
               </span>
             </div>
             {training.data.metrics && (
@@ -318,7 +347,7 @@ export const Playground = () => {
             <NetworkGraphLayer>
               <NetworkGraphLayerSlot height={24}>
                 <div className="text-muted-foreground flex h-full justify-center gap-2 text-xs">
-                  <h3>Features</h3>
+                  <h3 className="ml-8">Features</h3>
                 </div>
               </NetworkGraphLayerSlot>
               {FeatureSchema.options.map((feature, featureIndex) => (

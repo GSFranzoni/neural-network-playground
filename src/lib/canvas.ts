@@ -7,7 +7,14 @@ type Size = {
 
 type Rgb = [number, number, number];
 
+type FieldPixel = {
+  color: Rgb;
+  opacity: number;
+};
+
 const CLASSIFICATION_BOUNDARY_WIDTH = 0.08;
+
+const FIELD_COLOR_GAMMA = 0.8;
 
 export type FieldColorScale = (value: number) => Rgb;
 
@@ -20,10 +27,55 @@ function colorFromToken(token: string): Rgb {
   return [red, green, blue];
 }
 
+function interpolateColor(from: Rgb, to: Rgb, progress: number): Rgb {
+  return [
+    Math.round(from[0] + (to[0] - from[0]) * progress),
+    Math.round(from[1] + (to[1] - from[1]) * progress),
+    Math.round(from[2] + (to[2] - from[2]) * progress),
+  ];
+}
+
+function renderField(field: ScalarField, pixelForValue: (value: number) => FieldPixel) {
+  const rows = field.values.length;
+  const columns = field.values[0]?.length ?? 0;
+
+  if (rows === 0 || columns === 0) {
+    return null;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = columns;
+  canvas.height = rows;
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return null;
+  }
+
+  const image = context.createImageData(columns, rows);
+
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < columns; column++) {
+      const { color, opacity } = pixelForValue(field.values[row][column]);
+      const index = (row * columns + column) * 4;
+
+      image.data[index] = color[0];
+      image.data[index + 1] = color[1];
+      image.data[index + 2] = color[2];
+      image.data[index + 3] = opacity;
+    }
+  }
+
+  context.putImageData(image, 0, 0);
+
+  return canvas;
+}
+
 export function classificationColorScale(): FieldColorScale {
   const classA = colorFromToken("--classification-a");
   const classB = colorFromToken("--classification-b");
-  const boundary: Rgb = [242, 242, 242];
+  const boundary: Rgb = [255, 255, 255];
   const boundaryStart = 0.5 - CLASSIFICATION_BOUNDARY_WIDTH / 2;
   const boundaryEnd = 0.5 + CLASSIFICATION_BOUNDARY_WIDTH / 2;
 
@@ -39,48 +91,26 @@ export function classificationColorScale(): FieldColorScale {
         ? [classA, boundary, normalized / boundaryStart]
         : [boundary, classB, (normalized - boundaryEnd) / (1 - boundaryEnd)];
 
-    return [
-      Math.round(from[0] + (to[0] - from[0]) * progress),
-      Math.round(from[1] + (to[1] - from[1]) * progress),
-      Math.round(from[2] + (to[2] - from[2]) * progress),
-    ];
+    return interpolateColor(from, to, progress);
   };
 }
 
 export function activationFieldDataUrl(field: ScalarField): string {
-  const rows = field.values.length;
-  const columns = field.values[0]?.length ?? 0;
-  const canvas = document.createElement("canvas");
-  canvas.width = columns;
-  canvas.height = rows;
-
-  const context = canvas.getContext("2d");
-  if (!context || rows === 0 || columns === 0) {
-    return "";
-  }
-
   const positive = colorFromToken("--classification-b");
   const negative = colorFromToken("--classification-a");
-  const maxMagnitude = Math.max(
-    1e-6,
-    ...field.values.flatMap((row) => row.map((value) => Math.abs(value))),
-  );
-  const image = context.createImageData(columns, rows);
+  const neutral: Rgb = [232, 234, 235];
+  const maxMagnitude = Math.max(1e-6, ...field.values.flatMap((row) => row.map(Math.abs)));
+  const canvas = renderField(field, (value) => {
+    const magnitude = Math.pow(Math.min(1, Math.abs(value) / maxMagnitude), FIELD_COLOR_GAMMA);
+    const target = value >= 0 ? positive : negative;
 
-  for (let row = 0; row < rows; row++) {
-    for (let column = 0; column < columns; column++) {
-      const value = field.values[row][column];
-      const color = value >= 0 ? positive : negative;
-      const index = (row * columns + column) * 4;
-      image.data[index] = color[0];
-      image.data[index + 1] = color[1];
-      image.data[index + 2] = color[2];
-      image.data[index + 3] = Math.round((0.12 + (Math.abs(value) / maxMagnitude) * 0.88) * 255);
-    }
-  }
+    return {
+      color: interpolateColor(neutral, target, magnitude),
+      opacity: 255,
+    };
+  });
 
-  context.putImageData(image, 0, 0);
-  return canvas.toDataURL();
+  return canvas?.toDataURL() ?? "";
 }
 
 function resizeCanvas(canvas: HTMLCanvasElement, size: Size): CanvasRenderingContext2D | null {
@@ -103,29 +133,15 @@ export function drawField(
   size: Size,
 ): void {
   const context = resizeCanvas(canvas, size);
-  const rows = field.values.length;
-  const columns = field.values[0]?.length ?? 0;
-  if (!context || rows === 0 || columns === 0) {
+  const buffer = renderField(field, (value) => ({
+    color: colorScale(value),
+    opacity: 105,
+  }));
+
+  if (!context || !buffer) {
     return;
   }
 
-  const image = context.createImageData(columns, rows);
-
-  for (let row = 0; row < rows; row++) {
-    for (let column = 0; column < columns; column++) {
-      const [red, green, blue] = colorScale(field.values[row][column]);
-      const index = (row * columns + column) * 4;
-      image.data[index] = red;
-      image.data[index + 1] = green;
-      image.data[index + 2] = blue;
-      image.data[index + 3] = 105;
-    }
-  }
-
-  const buffer = document.createElement("canvas");
-  buffer.width = columns;
-  buffer.height = rows;
-  buffer.getContext("2d")?.putImageData(image, 0, 0);
   context.clearRect(0, 0, size.width, size.height);
   context.imageSmoothingEnabled = true;
   context.drawImage(buffer, 0, 0, size.width, size.height);

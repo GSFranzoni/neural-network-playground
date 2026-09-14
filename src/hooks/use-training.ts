@@ -5,7 +5,6 @@ import { useNetworkConfigChange } from "@/hooks/use-network-config-change";
 import type { NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
 import { encodeCoordinates } from "@/lib/features";
 import { binaryCrossEntropy, NeuralNetwork, SGD } from "@/lib/neural-network";
-import { datasets } from "@/mocks/datasets";
 import type { Dataset } from "@/types/app";
 
 export type TrainingMetrics = {
@@ -25,6 +24,7 @@ export type TrainingState = {
 
 type Props = {
   config: NetworkConfigFormSchema;
+  dataset: Dataset;
   network: NeuralNetwork;
 };
 
@@ -66,12 +66,10 @@ function trainNetwork(
   return { loss: totalLoss / samples, accuracy: correct / samples };
 }
 
-export function useTraining({ config, network }: Props) {
+export function useTraining({ config, dataset, network }: Props) {
   const [running, setRunning] = useState(false);
 
   const [data, setData] = useState<TrainingState>(initialTrainingState);
-
-  const dataset = datasets(config.noise)[config.dataset];
 
   const train = (epochs: number) => trainNetwork(network, dataset, config, epochs);
 

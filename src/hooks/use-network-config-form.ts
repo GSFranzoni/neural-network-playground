@@ -36,7 +36,7 @@ export const NetworkConfigDefaultValues = {
       neurons: 2,
     },
   ],
-  learningRate: 0.003,
+  learningRate: 0.03,
   noise: 0,
   features: new Set(["x1", "x2"]),
 } as NetworkConfigFormSchema;
