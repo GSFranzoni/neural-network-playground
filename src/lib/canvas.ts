@@ -12,7 +12,7 @@ type FieldPixel = {
   opacity: number;
 };
 
-const CLASSIFICATION_BOUNDARY_WIDTH = 0.01;
+const CLASSIFICATION_BOUNDARY_WIDTH = 0;
 
 const FIELD_COLOR_GAMMA = 0.8;
 
