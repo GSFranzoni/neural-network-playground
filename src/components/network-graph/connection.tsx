@@ -61,7 +61,7 @@ export const NetworkGraphConnection = memo(function NetworkGraphConnection({
         fill="none"
         pointerEvents="none"
         ref={pathElement}
-        strokeDasharray="5 3"
+        strokeDasharray="7 3"
         strokeLinecap="butt"
         style={{ strokeDashoffset: "var(--connection-flow-offset, 0px)" }}
       />

@@ -29,6 +29,14 @@ import type {
 } from "./types";
 import { layerNeurons, layerSlots, leftSlotWidthFor, neuronY, sizeFor } from "./utils";
 
+function colorForWeight(weight: number): string {
+  const color = weight < 0 ? "var(--network-negative)" : "var(--network-positive)";
+
+  const intensity = Math.min(Math.abs(weight), 1) * 100;
+
+  return `color-mix(in oklch, ${color} ${intensity}%, white 1%)`;
+}
+
 function updateConnectionVisuals(
   connections: NetworkGraphConnectionElement[],
   paths: ReadonlyMap<string, SVGPathElement>,
@@ -43,9 +51,8 @@ function updateConnectionVisuals(
       continue;
     }
     const magnitude = Math.min(Math.abs(connection.props.weight) / maxWeight, 1);
-    path.style.stroke =
-      connection.props.weight >= 0 ? "var(--network-positive)" : "var(--network-negative)";
-    path.style.strokeOpacity = `${0.4 + magnitude * 0.6}`;
+    path.style.stroke = colorForWeight(connection.props.weight);
+    path.style.strokeOpacity = "1";
     path.style.strokeWidth = `${1.25 + magnitude * 2.5}`;
     path.setAttribute("aria-label", `Weight: ${connection.props.weight.toFixed(4)}`);
   }
