@@ -67,11 +67,7 @@ const VERTICAL_PADDING = 24;
 const NEURON_SPACING = 52;
 const DEFAULT_LEFT_SLOT_WIDTH = 72;
 
-function neuronY(
-  index: number,
-  neuronHeight: number,
-  topOffset: number,
-): number {
+function neuronY(index: number, neuronHeight: number, topOffset: number): number {
   return topOffset + neuronHeight / 2 + index * NEURON_SPACING;
 }
 
@@ -79,31 +75,21 @@ function sizeFor(neuron: ReactElement<NetworkGraphNeuronProps>): NodeSize {
   return neuron.props.size ?? DEFAULT_NEURON_SIZE;
 }
 
-function leftSlotWidthFor(
-  neuron: ReactElement<NetworkGraphNeuronProps>,
-): number {
-  return neuron.props.leftSlot
-    ? (neuron.props.leftSlotWidth ?? DEFAULT_LEFT_SLOT_WIDTH)
-    : 0;
+function leftSlotWidthFor(neuron: ReactElement<NetworkGraphNeuronProps>): number {
+  return neuron.props.leftSlot ? (neuron.props.leftSlotWidth ?? DEFAULT_LEFT_SLOT_WIDTH) : 0;
 }
 
-function layerNeurons(
-  children: ReactNode,
-): ReactElement<NetworkGraphNeuronProps>[] {
+function layerNeurons(children: ReactNode): ReactElement<NetworkGraphNeuronProps>[] {
   return Children.toArray(children).filter(
     (child): child is ReactElement<NetworkGraphNeuronProps> =>
-      isValidElement<NetworkGraphNeuronProps>(child) &&
-      child.type === NetworkGraphNeuron,
+      isValidElement<NetworkGraphNeuronProps>(child) && child.type === NetworkGraphNeuron,
   );
 }
 
-function layerSlots(
-  children: ReactNode,
-): ReactElement<NetworkGraphLayerSlotProps>[] {
+function layerSlots(children: ReactNode): ReactElement<NetworkGraphLayerSlotProps>[] {
   return Children.toArray(children).filter(
     (child): child is ReactElement<NetworkGraphLayerSlotProps> =>
-      isValidElement<NetworkGraphLayerSlotProps>(child) &&
-      child.type === NetworkGraphLayerSlot,
+      isValidElement<NetworkGraphLayerSlotProps>(child) && child.type === NetworkGraphLayerSlot,
   );
 }
 
@@ -118,10 +104,7 @@ export const NetworkGraphNeuron = ({
   position,
 }: NetworkGraphNeuronProps) => {
   const clipId = useId();
-  const activationMap = useMemo(
-    () => (field ? activationFieldDataUrl(field) : ""),
-    [field],
-  );
+  const activationMap = useMemo(() => (field ? activationFieldDataUrl(field) : ""), [field]);
   if (!position) {
     return null;
   }
@@ -130,11 +113,7 @@ export const NetworkGraphNeuron = ({
   const left = position.x - width / 2;
   const top = position.y - height / 2;
   const handleKeyDown = (event: KeyboardEvent<SVGElement>) => {
-    if (
-      !isSelectable ||
-      !onSelect ||
-      (event.key !== "Enter" && event.key !== " ")
-    ) {
+    if (!isSelectable || !onSelect || (event.key !== "Enter" && event.key !== " ")) {
       return;
     }
 
@@ -160,20 +139,13 @@ export const NetworkGraphNeuron = ({
     return (
       <foreignObject
         {...selectableProps}
-        className={cn(
-          isSelectable && "cursor-pointer focus:outline-none",
-          selectionClassName,
-        )}
+        className={cn(isSelectable && "cursor-pointer focus:outline-none", selectionClassName)}
         x={left}
         y={top}
         width={width}
         height={height}
       >
-        <div
-          className={cn("h-full w-full", isSelectable && "transition-opacity")}
-        >
-          {children}
-        </div>
+        <div className={cn("h-full w-full", isSelectable && "transition-opacity")}>{children}</div>
       </foreignObject>
     );
   }
@@ -187,12 +159,7 @@ export const NetworkGraphNeuron = ({
       )}
     >
       {leftSlot ? (
-        <foreignObject
-          x={left - leftSlotWidth}
-          y={top}
-          width={leftSlotWidth}
-          height={height}
-        >
+        <foreignObject x={left - leftSlotWidth} y={top} width={leftSlotWidth} height={height}>
           <div className="text-muted-foreground flex h-full items-center justify-end pr-2 text-xs">
             {leftSlot}
           </div>
@@ -203,14 +170,7 @@ export const NetworkGraphNeuron = ({
           <rect x={left} y={top} width={width} height={height} rx="5" />
         </clipPath>
       </defs>
-      <rect
-        x={left}
-        y={top}
-        width={width}
-        height={height}
-        rx="5"
-        fill="var(--card)"
-      />
+      <rect x={left} y={top} width={width} height={height} rx="5" fill="var(--card)" />
       {activationMap ? (
         <image
           clipPath={`url(#${clipId})`}
@@ -250,15 +210,10 @@ function updateConnectionVisuals(
       continue;
     }
 
-    const magnitude = Math.min(
-      Math.abs(connection.props.weight) / maxWeight,
-      1,
-    );
+    const magnitude = Math.min(Math.abs(connection.props.weight) / maxWeight, 1);
 
     path.style.stroke =
-      connection.props.weight >= 0
-        ? "var(--network-positive)"
-        : "var(--network-negative)";
+      connection.props.weight >= 0 ? "var(--network-positive)" : "var(--network-negative)";
     path.style.strokeDashoffset = `${-iteration / 2}`;
     path.style.strokeOpacity = `${0.4 + magnitude * 0.6}`;
     path.style.strokeWidth = `${1.25 + magnitude * 2.5}`;
@@ -298,11 +253,7 @@ export const NetworkGraphConnection = memo(function NetworkGraphConnection({
   }
 
   const controlX =
-    (fromPosition.x +
-      fromPosition.width / 2 +
-      toPosition.x -
-      toPosition.width / 2) /
-    2;
+    (fromPosition.x + fromPosition.width / 2 + toPosition.x - toPosition.width / 2) / 2;
 
   const path = `M ${fromPosition.x + fromPosition.width / 2} ${fromPosition.y} C ${controlX} ${fromPosition.y}, ${controlX} ${toPosition.y}, ${toPosition.x - toPosition.width / 2} ${toPosition.y}`;
 
@@ -363,29 +314,21 @@ export const NetworkGraphLayer = ({
           },
         });
       })}
-      {slots.map((slot) =>
-        cloneElement(slot, { position: { x, y: VERTICAL_PADDING } }),
-      )}
+      {slots.map((slot) => cloneElement(slot, { position: { x, y: VERTICAL_PADDING } }))}
     </g>
   );
 };
 
-export const NetworkGraph = ({
-  children,
-  iteration = 0,
-}: NetworkGraphProps) => {
+export const NetworkGraph = ({ children, iteration = 0 }: NetworkGraphProps) => {
   const { ref, size } = useResizeObserver<HTMLDivElement>();
   const connectionElements = useRef(new Map<string, SVGPathElement>());
-  const connectionsRef = useRef<ReactElement<NetworkGraphConnectionProps>[]>(
-    [],
-  );
+  const connectionsRef = useRef<ReactElement<NetworkGraphConnectionProps>[]>([]);
   const frame = useRef<number | null>(null);
 
   const graphChildren = Children.toArray(children).filter(isValidElement);
 
   const layers = graphChildren.filter(
-    (child): child is ReactElement<NetworkGraphLayerProps> =>
-      child.type === NetworkGraphLayer,
+    (child): child is ReactElement<NetworkGraphLayerProps> => child.type === NetworkGraphLayer,
   );
 
   const connections = graphChildren.filter(
@@ -415,24 +358,14 @@ export const NetworkGraph = ({
     384,
     ...layers.map((layer) => {
       const neurons = layerNeurons(layer.props.children);
-      const tallestNeuron = Math.max(
-        ...neurons.map((neuron) => sizeFor(neuron).height),
-        0,
-      );
-      return (
-        contentTop +
-        VERTICAL_PADDING +
-        NEURON_SPACING * (neurons.length - 1) +
-        tallestNeuron
-      );
+      const tallestNeuron = Math.max(...neurons.map((neuron) => sizeFor(neuron).height), 0);
+      return contentTop + VERTICAL_PADDING + NEURON_SPACING * (neurons.length - 1) + tallestNeuron;
     }),
   );
 
   const availableWidth = Math.max(
     0,
-    size.width -
-      HORIZONTAL_PADDING * 2 -
-      layerWidths.reduce((total, width) => total + width, 0),
+    size.width - HORIZONTAL_PADDING * 2 - layerWidths.reduce((total, width) => total + width, 0),
   );
 
   const layerGap = layers.length > 1 ? availableWidth / (layers.length - 1) : 0;
@@ -440,9 +373,7 @@ export const NetworkGraph = ({
   const layerPositions = layerWidths.map(
     (width, index) =>
       HORIZONTAL_PADDING +
-      layerWidths
-        .slice(0, index)
-        .reduce((total, previousWidth) => total + previousWidth, 0) +
+      layerWidths.slice(0, index).reduce((total, previousWidth) => total + previousWidth, 0) +
       layerGap * index +
       width / 2,
   );
@@ -451,21 +382,16 @@ export const NetworkGraph = ({
     1e-6,
     ...connections.map((connection) => Math.abs(connection.props.weight)),
   );
-  const connectionTopology = connections
-    .map((connection) => connection.props.id)
-    .join("|");
+  const connectionTopology = connections.map((connection) => connection.props.id).join("|");
 
-  const setConnectionElement = useCallback(
-    (id: string, element: SVGPathElement | null) => {
-      if (element) {
-        connectionElements.current.set(id, element);
-        return;
-      }
+  const setConnectionElement = useCallback((id: string, element: SVGPathElement | null) => {
+    if (element) {
+      connectionElements.current.set(id, element);
+      return;
+    }
 
-      connectionElements.current.delete(id);
-    },
-    [],
-  );
+    connectionElements.current.delete(id);
+  }, []);
 
   useLayoutEffect(() => {
     connectionsRef.current = connections;

@@ -5,7 +5,7 @@ import { useNetworkConfigChange } from "@/hooks/use-network-config-change";
 import type { NetworkConfigFormSchema } from "@/hooks/use-network-config-form";
 import { encodeCoordinates } from "@/lib/features";
 import { binaryCrossEntropy, NeuralNetwork, SGD } from "@/lib/neural-network";
-import { datasets } from "@/mocks/dataset";
+import { datasets } from "@/mocks/datasets";
 import type { Dataset } from "@/types/app";
 
 export type TrainingMetrics = {

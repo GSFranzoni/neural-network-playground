@@ -13,7 +13,7 @@ import {
   TanhLayer,
   type Layer,
 } from "@/lib/neural-network";
-import { datasets } from "@/mocks/dataset";
+import { datasets } from "@/mocks/datasets";
 
 function activationLayer(activation: NetworkConfigFormSchema["activation"]): Layer {
   switch (activation) {

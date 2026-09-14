@@ -153,7 +153,7 @@ export const Playground = () => {
                                     alt=""
                                     aria-hidden="true"
                                     className="size-6 rounded-md"
-                                    src={`/icons/${dataset.value}.png`}
+                                    src={`${import.meta.env.BASE_URL}icons/${dataset.value}.png`}
                                   />
                                   {dataset.label}
                                 </div>

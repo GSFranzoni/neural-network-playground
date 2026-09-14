@@ -1,9 +1,4 @@
-import {
-  parseAsArrayOf,
-  parseAsFloat,
-  parseAsInteger,
-  parseAsStringEnum,
-} from "nuqs";
+import { parseAsArrayOf, parseAsFloat, parseAsInteger, parseAsStringEnum } from "nuqs";
 
 import {
   ActivationSchema,
@@ -23,9 +18,7 @@ export const networkConfigSearchParams = {
     .withDefault(Array.from(NetworkConfigDefaultValues.features))
     .withOptions({ clearOnDefault: false }),
   hiddenLayers: parseAsArrayOf(parseAsInteger)
-    .withDefault(
-      NetworkConfigDefaultValues.hiddenLayers.map(({ neurons }) => neurons),
-    )
+    .withDefault(NetworkConfigDefaultValues.hiddenLayers.map(({ neurons }) => neurons))
     .withOptions({ clearOnDefault: false }),
   learningRate: parseAsFloat
     .withDefault(NetworkConfigDefaultValues.learningRate)
